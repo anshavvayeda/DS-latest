@@ -1,0 +1,96 @@
+name: Test SSH Connection
+
+on:
+  workflow_dispatch:  # Manual trigger only
+
+jobs:
+  test-ssh:
+    name: Test SSH to EC2
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Debug - Print Secret Info (NOT the actual secret)
+        run: |
+          echo "Checking if secrets are configured..."
+          if [ -n "${{ secrets.EC2_HOST }}" ]; then
+            echo "✅ EC2_HOST is configured"
+          else
+            echo "❌ EC2_HOST is NOT configured"
+          fi
+          if [ -n "${{ secrets.EC2_USERNAME }}" ]; then
+            echo "✅ EC2_USERNAME is configured"
+          else
+            echo "❌ EC2_USERNAME is NOT configured"
+          fi
+          if [ -n "${{ secrets.EC2_SSH_KEY }}" ]; then
+            echo "✅ EC2_SSH_KEY is configured"
+            echo "EC2_SSH_KEY length: $(echo '${{ secrets.EC2_SSH_KEY }}' | wc -c) characters"
+          else
+            echo "❌ EC2_SSH_KEY is NOT configured"
+          fi
+      
+      - name: Test SSH Connection
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          timeout: 30s
+          command_timeout: 30s
+          script: |
+            echo "========================================="
+            echo "✅ SSH Connection Successful!"
+            echo "========================================="
+            echo "Hostname: $(hostname)"
+            echo "User: $(whoami)"
+            echo "Date: $(date)"
+            echo "Working directory: $(pwd)"
+            echo "Home directory: $HOME"
+            echo ""
+            echo "System Information:"
+            uname -a
+            echo ""
+            echo "Disk Space:"
+            df -h | grep -E '^/dev/'
+            echo ""
+            echo "EC2 Instance Check:"
+            if [ -f /home/ubuntu/studybuddy/backend/server.py ]; then
+              echo "✅ StudyBuddy app directory exists"
+            else
+              echo "⚠️  StudyBuddy app directory NOT found"
+            fi
+            echo ""
+            echo "Systemd Service Check:"
+            if systemctl list-unit-files | grep -q studybuddy-backend; then
+              echo "✅ studybuddy-backend service is configured"
+              sudo systemctl status studybuddy-backend --no-pager || true
+            else
+              echo "⚠️  studybuddy-backend service NOT configured"
+              echo "Run ec2-setup.sh script first"
+            fi
+            echo "========================================="
+      
+      - name: Test Result
+        if: success()
+        run: |
+          echo "✅✅✅ SSH CONNECTION TEST PASSED ✅✅✅"
+          echo ""
+          echo "Your GitHub Secrets are configured correctly!"
+          echo "SSH connection to EC2 is working."
+          echo ""
+          echo "Next steps:"
+          echo "1. If EC2 setup warning appeared, run: scripts/ec2-setup.sh on EC2"
+          echo "2. Try the full deployment workflow"
+      
+      - name: Test Failed
+        if: failure()
+        run: |
+          echo "❌❌❌ SSH CONNECTION TEST FAILED ❌❌❌"
+          echo ""
+          echo "Possible issues:"
+          echo "1. EC2_SSH_KEY secret might be incorrect"
+          echo "2. EC2 security group might be blocking SSH (port 22)"
+          echo "3. EC2_HOST or EC2_USERNAME might be wrong"
+          echo ""
+          echo "Please check the error message above and refer to CICD_DEBUGGING_GUIDE.md"
