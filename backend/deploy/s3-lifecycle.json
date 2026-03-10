@@ -1,0 +1,37 @@
+{
+    "Rules": [
+        {
+            "ID": "DeleteOldTempFiles",
+            "Status": "Enabled",
+            "Filter": {
+                "Prefix": "temp/"
+            },
+            "Expiration": {
+                "Days": 7
+            }
+        },
+        {
+            "ID": "TransitionOldUploadsToIA",
+            "Status": "Enabled",
+            "Filter": {
+                "Prefix": "uploads/"
+            },
+            "Transitions": [
+                {
+                    "Days": 90,
+                    "StorageClass": "STANDARD_IA"
+                }
+            ]
+        },
+        {
+            "ID": "DeleteOldAICache",
+            "Status": "Enabled",
+            "Filter": {
+                "Prefix": "ai_cache/"
+            },
+            "Expiration": {
+                "Days": 30
+            }
+        }
+    ]
+}

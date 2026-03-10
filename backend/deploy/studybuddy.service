@@ -1,0 +1,53 @@
+[Unit]
+Description=StudyBuddy FastAPI Backend
+Documentation=https://github.com/yourusername/studybuddy
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=ubuntu
+Group=ubuntu
+RuntimeDirectory=studybuddy
+WorkingDirectory=/home/ubuntu/studybuddy/backend
+Environment="PATH=/home/ubuntu/studybuddy/backend/venv/bin:/usr/local/bin:/usr/bin:/bin"
+EnvironmentFile=/home/ubuntu/studybuddy/backend/.env
+
+# Start command
+ExecStart=/home/ubuntu/studybuddy/backend/venv/bin/gunicorn \
+    --config /home/ubuntu/studybuddy/backend/gunicorn.conf.py \
+    server:app
+
+# Reload command (graceful)
+ExecReload=/bin/kill -s HUP $MAINPID
+
+# Stop command
+ExecStop=/bin/kill -s TERM $MAINPID
+
+# Restart configuration
+Restart=always
+RestartSec=10
+StartLimitInterval=0
+
+# Process limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/ubuntu/studybuddy/backend/uploads /home/ubuntu/studybuddy/backend/logs /tmp
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=studybuddy
+
+# Timeouts
+TimeoutStartSec=60
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
