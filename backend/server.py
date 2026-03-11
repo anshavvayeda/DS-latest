@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, Depends, HTTPException, UploadFile, File, Cookie, Response, Form, BackgroundTasks
+from fastapi import FastAPI, APIRouter, Depends, HTTPException, UploadFile, File, Cookie, Response, Form, BackgroundTasks, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -472,11 +472,28 @@ class RequestPasswordResetOTPRequest(BaseModel):
     roll_no: str
 
 # Auth Helpers
-async def get_current_user(token: Optional[str] = Cookie(None, alias="auth_token"), db: AsyncSession = Depends(get_db)) -> User:
-    if not token:
+async def get_current_user(
+    token: Optional[str] = Cookie(None, alias="auth_token"),
+    authorization: Optional[str] = Header(None),
+    db: AsyncSession = Depends(get_db)
+) -> User:
+    """
+    Get current user from either:
+    1. Cookie (auth_token) - preferred for browser
+    2. Authorization header (Bearer token) - fallback for CORS/HTTP issues
+    """
+    # Try cookie first
+    auth_token = token
+    
+    # If no cookie, try Authorization header
+    if not auth_token and authorization:
+        if authorization.startswith("Bearer "):
+            auth_token = authorization.replace("Bearer ", "")
+    
+    if not auth_token:
         raise HTTPException(status_code=401, detail="Not authenticated")
     
-    payload = decode_jwt_token(token)
+    payload = decode_jwt_token(auth_token)
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid token")
     
@@ -822,6 +839,7 @@ async def admin_login(request: AdminLoginRequest, response: Response, db: AsyncS
     
     return {
         "message": "Admin login successful",
+        "token": token,  # Include token in response for localStorage fallback
         "user": {
             "id": str(admin_user.id),
             "role": "admin",
@@ -1459,6 +1477,7 @@ async def login_with_rollno(
     
     return {
         "message": "Login successful",
+        "token": token,  # Include token in response for localStorage fallback
         "user": {
             "id": str(user.id),
             "role": user.role,

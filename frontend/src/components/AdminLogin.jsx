@@ -21,6 +21,11 @@ const AdminLogin = ({ onLoginSuccess }) => {
         password
       }, { withCredentials: true });
 
+      // Store token in localStorage as fallback for CORS/HTTP issues
+      if (response.data.token) {
+        localStorage.setItem('auth_token', response.data.token);
+      }
+
       if (response.data.user) {
         onLoginSuccess(response.data.user);
       }

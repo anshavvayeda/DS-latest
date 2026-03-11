@@ -754,6 +754,12 @@ function App() {
     try {
       const response = await axios.get(`${API}/auth/me`, { withCredentials: true });
       setUser(response.data);
+      
+      // Store token in localStorage as fallback (if provided)
+      if (response.data.token) {
+        localStorage.setItem('auth_token', response.data.token);
+      }
+      
       // Handle admin, teacher, and student views
       if (response.data.role === 'admin') {
         setView('admin');
@@ -766,10 +772,33 @@ function App() {
       // Students no longer auto-show registration form - admin will set up profiles
     } catch (error) {
       console.log('Not authenticated');
+      localStorage.removeItem('auth_token'); // Clear token on auth failure
     } finally {
       setLoading(false);
     }
   };
+
+  // Add axios interceptor to include token in headers as fallback
+  useEffect(() => {
+    const requestInterceptor = axios.interceptors.request.use(
+      (config) => {
+        // Always try cookies first (withCredentials)
+        // But also add Bearer token as fallback for CORS/HTTP issues
+        const token = localStorage.getItem('auth_token');
+        if (token && !config.headers.Authorization) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => {
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.request.eject(requestInterceptor);
+    };
+  }, []);
 
   const handleProfileComplete = (profile) => {
     setUser(prev => ({
