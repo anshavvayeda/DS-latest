@@ -103,7 +103,7 @@ tail -f /var/log/supervisor/backend.err.log
 
 ### Step 4: Test API
 ```bash
-curl https://ai-content-gen-21.preview.emergentagent.com/api/
+curl https://lms-auth-fix.preview.emergentagent.com/api/
 # Should return: {"message": "StudyBuddy API", "status": "running"}
 ```
 

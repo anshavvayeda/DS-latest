@@ -17,7 +17,7 @@ import json
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://fullstack-study.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://lms-auth-fix.preview.emergentagent.com')
 API_URL = f"{BASE_URL}/api"
 
 ADMIN_CREDS = {"username": "admin", "password": "Admin@123"}
