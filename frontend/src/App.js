@@ -3687,11 +3687,11 @@ function TeacherView({ user, language }) {
           {/* Banner Logo */}
           <div className="banner-logo-container">
             <img 
-              src="/studybuddy-logo.png" 
+              src="/studybuddy-banner.png" 
               alt="StudyBuddy Banner" 
               className="banner-logo"
             />
-            <p className="banner-tagline">Smart Learning powered by AI</p>
+            <p className="banner-tagline">Your Personal AI Teaching Assistant 24*7</p>
           </div>
           
           <h2 className="standard-selection-title">Select Standard to Manage 🎓</h2>

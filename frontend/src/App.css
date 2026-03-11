@@ -1,3 +1,9 @@
+#emergent-badge {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
 
 /* Teacher Preview Banner */
 .teacher-preview-banner {
@@ -336,7 +342,7 @@ body {
 }
 
 .app-brand-combined-img {
-  height: 50px;
+  height: 150px;
   width: auto;
   object-fit: contain;
 }
@@ -533,16 +539,17 @@ body {
   height: auto;
   object-fit: contain;
   border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .banner-tagline {
   margin-top: 16px;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 500;
-  color: #94a3b8;
+  color: #ffffff;
   letter-spacing: 1px;
   text-align: center;
+  font-family: 'Dancing Script', 'Playfair Display', 'Georgia', cursive, serif;
+  font-style: italic;
 }
 
 .standard-selection-title {
