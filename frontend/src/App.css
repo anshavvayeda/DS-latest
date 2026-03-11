@@ -347,6 +347,12 @@ body {
   object-fit: contain;
 }
 
+.app-header-logo {
+  height: 56px;
+  width: 56px;
+  object-fit: contain;
+}
+
 .app-brand-name {
   font-size: 56px;
   font-weight: 700;

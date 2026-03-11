@@ -1157,7 +1157,7 @@ function AuthScreen({ onSuccess, onAdminLogin }) {
       <div className="auth-container">
         <div className="auth-card">
           <img 
-            src="/studybuddy-logo.png" 
+            src="/studybuddy-icon.png" 
             alt="StudyBuddy Logo" 
             className="auth-logo-img"
           />
@@ -1242,7 +1242,7 @@ function AuthScreen({ onSuccess, onAdminLogin }) {
       <div className="auth-container">
         <div className="auth-card">
           <img 
-            src="/studybuddy-logo.png" 
+            src="/studybuddy-icon.png" 
             alt="StudyBuddy Logo" 
             className="auth-logo-img"
           />
@@ -1372,7 +1372,7 @@ function AuthScreen({ onSuccess, onAdminLogin }) {
       <div className="auth-container">
         <div className="auth-card">
           <img 
-            src="/studybuddy-logo.png" 
+            src="/studybuddy-icon.png" 
             alt="StudyBuddy Logo" 
             className="auth-logo-img"
           />
@@ -1424,7 +1424,7 @@ function AuthScreen({ onSuccess, onAdminLogin }) {
       <div className="auth-container">
         <div className="auth-card">
           <img 
-            src="/studybuddy-logo.png" 
+            src="/studybuddy-icon.png" 
             alt="StudyBuddy Logo" 
             className="auth-logo-img"
           />
@@ -1542,9 +1542,9 @@ function Header({ user, view, setView, onLogout, language, onLanguageToggle, stu
     <header className="app-header">
       <div className="header-left">
         <img 
-          src="/studybuddy-brand.png" 
+          src="/studybuddy-icon.png" 
           alt="StudyBuddy" 
-          className="app-brand-combined-img"
+          className="app-header-logo"
         />
       </div>
       <div className="header-right">
