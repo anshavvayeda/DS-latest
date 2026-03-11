@@ -20,6 +20,8 @@ Set up the StudyBuddy project from GitHub repo `https://github.com/anshavvayeda/
 - [x] Public teacher registration endpoint
 - [x] EC2 admin seeding script (`init_ec2_admin.py`)
 - [x] **Brand logo replacement** — Replaced all old "Dhruv Star" logos with new StudyBuddy lightbulb mascot (2026-03-11)
+- [x] **Header brand consolidation** — Merged two header images into single combined brand image (`studybuddy-brand.png`) (2026-03-11)
+- [x] **Banner resize + tagline** — Reduced center mascot to 75% and added "Smart Learning powered by AI" tagline (2026-03-11)
 
 ## In Progress / Pending Issues
 - **P0**: Critical login/logout bug — login fails, gets stuck, or logs into wrong user after admin logout

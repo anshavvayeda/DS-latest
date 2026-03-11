@@ -1542,14 +1542,9 @@ function Header({ user, view, setView, onLogout, language, onLanguageToggle, stu
     <header className="app-header">
       <div className="header-left">
         <img 
-          src="/studybuddy-logo.png" 
-          alt="StudyBuddy Logo" 
-          className="app-logo-img"
-        />
-        <img 
-          src="/studybuddy-logo.png" 
+          src="/studybuddy-brand.png" 
           alt="StudyBuddy" 
-          className="app-brand-text-img"
+          className="app-brand-combined-img"
         />
       </div>
       <div className="header-right">
@@ -3696,6 +3691,7 @@ function TeacherView({ user, language }) {
               alt="StudyBuddy Banner" 
               className="banner-logo"
             />
+            <p className="banner-tagline">Smart Learning powered by AI</p>
           </div>
           
           <h2 className="standard-selection-title">Select Standard to Manage 🎓</h2>
