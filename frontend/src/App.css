@@ -526,27 +526,27 @@ body {
 }
 
 .banner-logo-container {
-  margin-bottom: 60px;
+  margin-bottom: 40px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 0;
 }
 
 .banner-logo {
-  max-width: 375px;
-  width: 75%;
+  max-width: 1500px;
+  width: 100%;
   height: auto;
   object-fit: contain;
-  border-radius: 20px;
 }
 
 .banner-tagline {
-  margin-top: 16px;
-  font-size: 20px;
+  margin-top: 8px;
+  font-size: 22px;
   font-weight: 500;
   color: #ffffff;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
   text-align: center;
   font-family: 'Dancing Script', 'Playfair Display', 'Georgia', cursive, serif;
   font-style: italic;
