@@ -109,6 +109,9 @@ const SectionHeader = ({ sectionId, sectionTitle, sectionInstruction }) => {
 const MCQQuestion = ({ question, answer, onChange, disabled }) => {
   function getOptions() {
     if (Array.isArray(question.options)) return question.options;
+    if (question.options && typeof question.options === 'object') {
+      return Object.entries(question.options).map(([key, val]) => `${key}) ${val}`);
+    }
     return [];
   }
   const options = getOptions();
@@ -476,7 +479,13 @@ const QuestionRenderer = ({
   showSection = false,
   isFirstInSection = false 
 }) => {
-  const questionType = (question.question_type || 'short_answer').toLowerCase();
+  let questionType = (question.question_type || '').toLowerCase();
+  
+  // Auto-detect MCQ if type is missing but options exist
+  if (!questionType && question.options && (Array.isArray(question.options) ? question.options.length > 0 : Object.keys(question.options).length > 0)) {
+    questionType = 'mcq';
+  }
+  if (!questionType) questionType = 'short_answer';
   
   // Render answer input based on question type
   const renderAnswerInput = () => {

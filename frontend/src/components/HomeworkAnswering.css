@@ -4,6 +4,18 @@
   padding: 20px;
 }
 
+.homework-answering-container,
+.homework-answering-container .question-card,
+.homework-answering-container p,
+.homework-answering-container li,
+.homework-answering-container span,
+.homework-answering-container label,
+.homework-answering-container td,
+.homework-answering-container th {
+  color: #1e293b;
+}
+
+
 .homework-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
