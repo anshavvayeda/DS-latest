@@ -941,12 +941,21 @@ const extractErrorMessage = (err, fallbackMessage = 'An error occurred') => {
 };
 
 function AuthScreen({ onSuccess, onAdminLogin }) {
-  const [view, setView] = useState('login'); // 'login', 'resetRequest', 'resetConfirm'
+  const [view, setView] = useState('login'); // 'login', 'register', 'resetRequest', 'resetConfirm'
   const [rollNo, setRollNo] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  
+  // Registration state
+  const [regName, setRegName] = useState('');
+  const [regSchool, setRegSchool] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regRollNo, setRegRollNo] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirmPassword, setRegConfirmPassword] = useState('');
   
   // Reset password state
   const [oldPassword, setOldPassword] = useState('');
@@ -970,6 +979,58 @@ function AuthScreen({ onSuccess, onAdminLogin }) {
       onSuccess();
     } catch (err) {
       setError(extractErrorMessage(err, 'Login failed. Check your roll number and password.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTeacherRegistration = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setMessage('');
+    
+    // Validation
+    if (regPassword !== regConfirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+    
+    if (regPassword.length < 6) {
+      setError('Password must be at least 6 characters');
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      await axios.post(`${API}/auth/register-teacher`, {
+        name: regName,
+        school_name: regSchool,
+        phone: regPhone,
+        email: regEmail || null,
+        roll_no: regRollNo,
+        password: regPassword,
+        role: 'teacher'
+      });
+      
+      setMessage('Registration successful! You can now login with your roll number and password.');
+      // Clear form
+      setRegName('');
+      setRegSchool('');
+      setRegPhone('');
+      setRegEmail('');
+      setRegRollNo('');
+      setRegPassword('');
+      setRegConfirmPassword('');
+      
+      // Switch to login view after 2 seconds
+      setTimeout(() => {
+        setView('login');
+        setMessage('');
+      }, 2000);
+    } catch (err) {
+      setError(extractErrorMessage(err, 'Registration failed'));
     } finally {
       setLoading(false);
     }
@@ -1100,6 +1161,14 @@ function AuthScreen({ onSuccess, onAdminLogin }) {
             >
               Forgot Password?
             </button>
+            <button 
+              type="button"
+              onClick={() => { setError(''); setMessage(''); setView('register'); }}
+              className="auth-link-button"
+              data-testid="register-link"
+            >
+              Register as Teacher
+            </button>
           </div>
           
           {/* Admin Login Link */}
@@ -1113,6 +1182,136 @@ function AuthScreen({ onSuccess, onAdminLogin }) {
               Admin Login
             </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Teacher Registration View
+  if (view === 'register') {
+    return (
+      <div className="auth-container">
+        <div className="auth-card">
+          <img 
+            src="/dhruv-star-logo.png" 
+            alt="Dhruv Star Logo" 
+            className="auth-logo-img"
+          />
+          <h2 className="auth-title">Teacher Registration</h2>
+          <p className="auth-subtitle">Register as a teacher to create your school namespace</p>
+          
+          <form onSubmit={handleTeacherRegistration} className="auth-form">
+            <div className="form-group">
+              <label>Full Name *</label>
+              <input
+                type="text"
+                placeholder="Enter your full name"
+                value={regName}
+                onChange={(e) => setRegName(e.target.value)}
+                required
+                className="auth-input"
+                data-testid="reg-name-input"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>School Name *</label>
+              <input
+                type="text"
+                placeholder="Enter school name"
+                value={regSchool}
+                onChange={(e) => setRegSchool(e.target.value)}
+                required
+                className="auth-input"
+                data-testid="reg-school-input"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>Roll Number / Employee ID *</label>
+              <input
+                type="text"
+                placeholder="Enter your roll/employee number"
+                value={regRollNo}
+                onChange={(e) => setRegRollNo(e.target.value)}
+                required
+                className="auth-input"
+                data-testid="reg-rollno-input"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>Phone Number *</label>
+              <input
+                type="tel"
+                placeholder="Enter phone number"
+                value={regPhone}
+                onChange={(e) => setRegPhone(e.target.value)}
+                required
+                className="auth-input"
+                data-testid="reg-phone-input"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>Email (Optional)</label>
+              <input
+                type="email"
+                placeholder="Enter email"
+                value={regEmail}
+                onChange={(e) => setRegEmail(e.target.value)}
+                className="auth-input"
+                data-testid="reg-email-input"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>Password * (min 6 characters)</label>
+              <input
+                type="password"
+                placeholder="Create password"
+                value={regPassword}
+                onChange={(e) => setRegPassword(e.target.value)}
+                required
+                minLength={6}
+                className="auth-input"
+                data-testid="reg-password-input"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>Confirm Password *</label>
+              <input
+                type="password"
+                placeholder="Confirm password"
+                value={regConfirmPassword}
+                onChange={(e) => setRegConfirmPassword(e.target.value)}
+                required
+                className="auth-input"
+                data-testid="reg-confirm-password-input"
+              />
+            </div>
+            
+            {error && <p className="auth-error">{error}</p>}
+            {message && <p className="auth-success">{message}</p>}
+            
+            <button 
+              type="submit" 
+              disabled={loading} 
+              className="auth-button"
+              data-testid="register-submit-button"
+            >
+              {loading ? 'Registering...' : 'Register'}
+            </button>
+            
+            <button 
+              type="button"
+              onClick={() => { setError(''); setMessage(''); setView('login'); }}
+              className="auth-button-secondary"
+            >
+              Back to Login
+            </button>
+          </form>
         </div>
       </div>
     );

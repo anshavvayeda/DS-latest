@@ -1470,6 +1470,95 @@ async def login_with_rollno(
         }
     }
 
+@api_router.post("/auth/register-teacher")
+async def public_teacher_registration(
+    request: AdminRegisterStudentRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    PUBLIC endpoint for teacher self-registration.
+    Teachers can register themselves without admin authentication.
+    This creates the school namespace for students to join later.
+    """
+    import uuid
+    
+    # Only allow teacher registration through this endpoint
+    if request.role != 'teacher':
+        raise HTTPException(status_code=400, detail="This endpoint is only for teacher registration. Students must be registered by admin.")
+    
+    # School name is required for teachers
+    if not request.school_name or not request.school_name.strip():
+        raise HTTPException(status_code=400, detail="School name is required for teachers")
+    
+    # Roll number is required
+    if not request.roll_no:
+        raise HTTPException(status_code=400, detail="Roll number is required")
+    
+    # Convert empty email string to None
+    email_value = request.email.strip() if request.email and request.email.strip() else None
+    
+    # Check if phone already exists
+    existing_phone = await db.execute(select(User).where(User.phone == request.phone))
+    if existing_phone.scalars().first():
+        raise HTTPException(status_code=400, detail=f"Phone number {request.phone} already registered")
+    
+    # Check if email already exists (if provided)
+    if email_value:
+        existing_email = await db.execute(select(User).where(User.email == email_value))
+        if existing_email.scalars().first():
+            raise HTTPException(status_code=400, detail=f"Email {email_value} already registered")
+    
+    # Check if roll_no already exists
+    existing_roll = await db.execute(select(StudentProfile).where(StudentProfile.roll_no == request.roll_no))
+    if existing_roll.scalars().first():
+        raise HTTPException(status_code=400, detail=f"Roll number {request.roll_no} already registered")
+    
+    try:
+        # Create User record
+        user_id = str(uuid.uuid4())
+        new_user = User(
+            id=user_id,
+            phone=request.phone,
+            email=email_value,
+            password_hash=hash_password(request.password),
+            role='teacher',
+            is_active=True,
+            profile_completed=True
+        )
+        db.add(new_user)
+        
+        # Create StudentProfile record (used for all roles including teachers)
+        new_profile = StudentProfile(
+            user_id=user_id,
+            name=request.name,
+            roll_no=request.roll_no,
+            school_name=request.school_name.strip(),
+            standard=None,  # Teachers don't have a standard
+            gender=request.gender or 'other',
+            parent_phone=request.parent_phone or request.phone
+        )
+        db.add(new_profile)
+        
+        await db.commit()
+        
+        logger.info(f"✅ Teacher registered: {request.name} from {request.school_name}")
+        
+        return {
+            "message": "Teacher registered successfully. You can now login with your roll number and password.",
+            "user": {
+                "id": user_id,
+                "name": request.name,
+                "roll_no": request.roll_no,
+                "school_name": request.school_name,
+                "role": "teacher"
+            }
+        }
+        
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Teacher registration failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
+
 @api_router.post("/auth/request-reset-otp")
 async def request_password_reset_otp(
     request: RequestPasswordResetOTPRequest,
