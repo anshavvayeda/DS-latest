@@ -1157,7 +1157,7 @@ function AuthScreen({ onSuccess, onAdminLogin }) {
       <div className="auth-container">
         <div className="auth-card">
           <img 
-            src="https://i.ibb.co/6yv9YFv/logo.png" 
+            src="/studybuddy-logo.png" 
             alt="StudyBuddy Logo" 
             className="auth-logo-img"
           />
@@ -1242,7 +1242,7 @@ function AuthScreen({ onSuccess, onAdminLogin }) {
       <div className="auth-container">
         <div className="auth-card">
           <img 
-            src="https://i.ibb.co/6yv9YFv/logo.png" 
+            src="/studybuddy-logo.png" 
             alt="StudyBuddy Logo" 
             className="auth-logo-img"
           />
@@ -1372,7 +1372,7 @@ function AuthScreen({ onSuccess, onAdminLogin }) {
       <div className="auth-container">
         <div className="auth-card">
           <img 
-            src="https://i.ibb.co/6yv9YFv/logo.png" 
+            src="/studybuddy-logo.png" 
             alt="StudyBuddy Logo" 
             className="auth-logo-img"
           />
@@ -1424,7 +1424,7 @@ function AuthScreen({ onSuccess, onAdminLogin }) {
       <div className="auth-container">
         <div className="auth-card">
           <img 
-            src="https://i.ibb.co/6yv9YFv/logo.png" 
+            src="/studybuddy-logo.png" 
             alt="StudyBuddy Logo" 
             className="auth-logo-img"
           />
@@ -1542,12 +1542,12 @@ function Header({ user, view, setView, onLogout, language, onLanguageToggle, stu
     <header className="app-header">
       <div className="header-left">
         <img 
-          src="https://i.ibb.co/6yv9YFv/logo.png" 
+          src="/studybuddy-logo.png" 
           alt="StudyBuddy Logo" 
           className="app-logo-img"
         />
         <img 
-          src="https://i.ibb.co/6yv9YFv/logo.png" 
+          src="/studybuddy-logo.png" 
           alt="StudyBuddy" 
           className="app-brand-text-img"
         />
@@ -3692,7 +3692,7 @@ function TeacherView({ user, language }) {
           {/* Banner Logo */}
           <div className="banner-logo-container">
             <img 
-              src="https://i.ibb.co/6yv9YFv/logo.png" 
+              src="/studybuddy-logo.png" 
               alt="StudyBuddy Banner" 
               className="banner-logo"
             />
