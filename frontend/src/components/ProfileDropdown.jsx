@@ -17,7 +17,7 @@ const ProfileDropdown = ({ user, studentProfile, onLogout, onViewProfile, onPare
   }, []);
 
   const gender = studentProfile?.gender || 'male';
-  const name = studentProfile?.name || user?.email?.split('@')[0] || 'Student';
+  const name = studentProfile?.name || user?.name || user?.email?.split('@')[0] || (user?.role === 'teacher' ? 'Teacher' : 'Student');
   const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   // Get avatar based on gender

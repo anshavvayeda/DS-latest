@@ -493,7 +493,7 @@ body {
 /* Main Views */
 .student-view,
 .teacher-view {
-  padding: 40px;
+  padding: 10px 40px;
   max-width: 1100px;
   margin: 0 auto;
   position: relative;
@@ -520,13 +520,15 @@ body {
 
 /* Standard Selection Dropdown */
 .standard-selection-container {
-  max-width: 600px;
-  margin: 40px auto;
+  max-width: 800px;
+  margin: 0 auto;
+  margin-top: -60px;
+  padding-top: 0;
   text-align: center;
 }
 
 .banner-logo-container {
-  margin-bottom: 40px;
+  margin-bottom: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -535,14 +537,17 @@ body {
 }
 
 .banner-logo {
-  max-width: 1500px;
+  max-width: 600px;
   width: 100%;
   height: auto;
   object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  margin-bottom: -40px;
 }
 
 .banner-tagline {
-  margin-top: 8px;
+  margin-top: 0;
   font-size: 22px;
   font-weight: 500;
   color: #ffffff;
