@@ -523,7 +523,7 @@ const TestManagement = ({ subjectId, standard, contentType = 'test' }) => {
           <div className="modal-content" style={{ maxWidth: '600px' }}>
             <h2>🤖 Preparing Your Test</h2>
             <p style={{ color: '#666', marginBottom: '20px' }}>
-              AI is preparing your questions...
+              AI is doing the magic, sit back and relax...
             </p>
             
             {/* Progress Bar */}
@@ -551,26 +551,6 @@ const TestManagement = ({ subjectId, standard, contentType = 'test' }) => {
               </div>
             </div>
             
-            {/* Stage Message */}
-            <div style={{ 
-              padding: '15px', 
-              backgroundColor: extractionFailed ? '#ffebee' : '#f5f5f5',
-              borderRadius: '8px',
-              marginBottom: '15px',
-              minHeight: '60px'
-            }}>
-              <p style={{ margin: '0 0 8px 0', fontWeight: 'bold', color: '#333' }}>
-                Current Stage: {extractionStage}
-              </p>
-              <p style={{ margin: 0, color: '#666' }}>
-                {extractionMessage}
-              </p>
-              {extractionElapsed > 0 && (
-                <p style={{ margin: '8px 0 0 0', fontSize: '0.9em', color: '#999' }}>
-                  Elapsed: {extractionElapsed}s
-                </p>
-              )}
-            </div>
             
             {/* Error Message - Show EXACT failure stage */}
             {extractionFailed && (
