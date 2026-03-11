@@ -111,6 +111,16 @@ jobs:
             
             # Reload Nginx
             echo "🔄 Reloading Nginx..."
+            
+            # Fix Nginx upload limit (for file uploads)
+            echo "🔧 Ensuring Nginx upload limit is set..."
+            if ! grep -q "client_max_body_size.*100M" /etc/nginx/nginx.conf; then
+              sudo sed -i '/http {/a \    client_max_body_size 100M;' /etc/nginx/nginx.conf
+              echo "✅ Set client_max_body_size to 100M"
+            else
+              echo "✅ Upload limit already configured"
+            fi
+            
             sudo systemctl reload nginx
             
             # Check Nginx status
