@@ -1157,8 +1157,8 @@ function AuthScreen({ onSuccess, onAdminLogin }) {
       <div className="auth-container">
         <div className="auth-card">
           <img 
-            src="/dhruv-star-logo.png" 
-            alt="Dhruv Star Logo" 
+            src="https://i.ibb.co/6yv9YFv/logo.png" 
+            alt="StudyBuddy Logo" 
             className="auth-logo-img"
           />
           
@@ -1242,8 +1242,8 @@ function AuthScreen({ onSuccess, onAdminLogin }) {
       <div className="auth-container">
         <div className="auth-card">
           <img 
-            src="/dhruv-star-logo.png" 
-            alt="Dhruv Star Logo" 
+            src="https://i.ibb.co/6yv9YFv/logo.png" 
+            alt="StudyBuddy Logo" 
             className="auth-logo-img"
           />
           <h2 className="auth-title">Teacher Registration</h2>
@@ -1372,8 +1372,8 @@ function AuthScreen({ onSuccess, onAdminLogin }) {
       <div className="auth-container">
         <div className="auth-card">
           <img 
-            src="/dhruv-star-logo.png" 
-            alt="Dhruv Star Logo" 
+            src="https://i.ibb.co/6yv9YFv/logo.png" 
+            alt="StudyBuddy Logo" 
             className="auth-logo-img"
           />
           <h2 className="auth-title">Reset Password</h2>
@@ -1424,8 +1424,8 @@ function AuthScreen({ onSuccess, onAdminLogin }) {
       <div className="auth-container">
         <div className="auth-card">
           <img 
-            src="/dhruv-star-logo.png" 
-            alt="Dhruv Star Logo" 
+            src="https://i.ibb.co/6yv9YFv/logo.png" 
+            alt="StudyBuddy Logo" 
             className="auth-logo-img"
           />
           <h2 className="auth-title">Reset Password</h2>
@@ -1542,13 +1542,13 @@ function Header({ user, view, setView, onLogout, language, onLanguageToggle, stu
     <header className="app-header">
       <div className="header-left">
         <img 
-          src="/dhruv-star-logo.png" 
-          alt="Dhruv Star Logo" 
+          src="https://i.ibb.co/6yv9YFv/logo.png" 
+          alt="StudyBuddy Logo" 
           className="app-logo-img"
         />
         <img 
-          src="/dhruv-star-text.png" 
-          alt="Dhruv Star" 
+          src="https://i.ibb.co/6yv9YFv/logo.png" 
+          alt="StudyBuddy" 
           className="app-brand-text-img"
         />
       </div>
@@ -3692,8 +3692,8 @@ function TeacherView({ user, language }) {
           {/* Banner Logo */}
           <div className="banner-logo-container">
             <img 
-              src="/banner-logo.png" 
-              alt="Dhruv Star Banner" 
+              src="https://i.ibb.co/6yv9YFv/logo.png" 
+              alt="StudyBuddy Banner" 
               className="banner-logo"
             />
           </div>
