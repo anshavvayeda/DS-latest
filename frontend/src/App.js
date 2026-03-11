@@ -784,8 +784,10 @@ function App() {
       (config) => {
         // Always try cookies first (withCredentials)
         // But also add Bearer token as fallback for CORS/HTTP issues
+        // IMPORTANT: Get token from localStorage at request time (not at mount time)
         const token = localStorage.getItem('auth_token');
-        if (token && !config.headers.Authorization) {
+        if (token) {
+          // Always set the Authorization header with latest token
           config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
@@ -798,7 +800,7 @@ function App() {
     return () => {
       axios.interceptors.request.eject(requestInterceptor);
     };
-  }, []);
+  }, []); // Empty dependency array - interceptor stays consistent
 
   const handleProfileComplete = (profile) => {
     setUser(prev => ({
@@ -810,7 +812,16 @@ function App() {
   };
 
   const handleLogout = async () => {
-    await axios.post(`${API}/auth/logout`, {}, { withCredentials: true });
+    try {
+      await axios.post(`${API}/auth/logout`, {}, { withCredentials: true });
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
+    
+    // CRITICAL: Clear localStorage token
+    localStorage.removeItem('auth_token');
+    
+    // Clear all state
     setUser(null);
     setShowProfileForm(false);
     setShowAdminLogin(false);
@@ -999,12 +1010,21 @@ function AuthScreen({ onSuccess, onAdminLogin }) {
     setLoading(true);
     setError('');
     
+    // CRITICAL: Clear old token first to prevent conflicts
+    localStorage.removeItem('auth_token');
+    
     try {
-      await axios.post(
+      const response = await axios.post(
         `${API}/auth/login`,
         { roll_no: rollNo, password },
         { withCredentials: true }
       );
+      
+      // Store new token
+      if (response.data.token) {
+        localStorage.setItem('auth_token', response.data.token);
+      }
+      
       onSuccess();
     } catch (err) {
       setError(extractErrorMessage(err, 'Login failed. Check your roll number and password.'));

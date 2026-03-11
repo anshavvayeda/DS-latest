@@ -15,6 +15,9 @@ const AdminLogin = ({ onLoginSuccess }) => {
     setError('');
     setLoading(true);
 
+    // CRITICAL: Clear old token first to prevent conflicts
+    localStorage.removeItem('auth_token');
+
     try {
       const response = await axios.post(`${API}/admin/login`, {
         username,
