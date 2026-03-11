@@ -23,17 +23,17 @@ echo "✅ Backed up nginx.conf"
 # Check if client_max_body_size is already set in main config
 if grep -q "client_max_body_size" $NGINX_CONF; then
     echo "⚠️  client_max_body_size already exists in nginx.conf"
-    sudo sed -i 's/client_max_body_size.*/client_max_body_size 100M;/' $NGINX_CONF
-    echo "✅ Updated existing client_max_body_size to 100M"
+    sudo sed -i 's/client_max_body_size.*/client_max_body_size 30M;/' $NGINX_CONF
+    echo "✅ Updated existing client_max_body_size to 30M"
 else
     # Add to http block
-    sudo sed -i '/http {/a \    client_max_body_size 100M;' $NGINX_CONF
-    echo "✅ Added client_max_body_size 100M to http block"
+    sudo sed -i '/http {/a \    client_max_body_size 30M;' $NGINX_CONF
+    echo "✅ Added client_max_body_size 30M to http block"
 fi
 
 # Also update in site-specific config if it exists
 if [ -f "$SITE_CONF" ]; then
-    sudo sed -i 's/client_max_body_size.*/client_max_body_size 100M;/' $SITE_CONF
+    sudo sed -i 's/client_max_body_size.*/client_max_body_size 30M;/' $SITE_CONF
     echo "✅ Updated site-specific config"
 fi
 
@@ -54,8 +54,8 @@ if sudo nginx -t; then
         echo "=========================================="
         echo "✅ Fix Applied Successfully!"
         echo "=========================================="
-        echo "Upload limit increased to 100MB"
-        echo "Teachers can now upload larger PDFs"
+        echo "Upload limit increased to 30MB"
+        echo "Teachers can now upload PDFs up to 30MB"
         echo "=========================================="
     else
         echo "❌ Failed to reload Nginx"

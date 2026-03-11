@@ -114,9 +114,9 @@ jobs:
             
             # Fix Nginx upload limit (for file uploads)
             echo "🔧 Ensuring Nginx upload limit is set..."
-            if ! grep -q "client_max_body_size.*100M" /etc/nginx/nginx.conf; then
-              sudo sed -i '/http {/a \    client_max_body_size 100M;' /etc/nginx/nginx.conf
-              echo "✅ Set client_max_body_size to 100M"
+            if ! grep -q "client_max_body_size.*30M" /etc/nginx/nginx.conf; then
+              sudo sed -i '/http {/a \    client_max_body_size 30M;' /etc/nginx/nginx.conf
+              echo "✅ Set client_max_body_size to 30M"
             else
               echo "✅ Upload limit already configured"
             fi
