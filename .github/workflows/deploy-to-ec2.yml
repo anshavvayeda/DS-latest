@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - master
-  workflow_dispatch:  # Allows manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -36,6 +36,7 @@ jobs:
             
             # Configuration
             APP_DIR="/home/ubuntu/studybuddy"
+            VENV_DIR="/home/ubuntu/studybuddy/venv"
             REPO_URL="https://github.com/${{ github.repository }}.git"
             BRANCH="${{ github.ref_name }}"
             
@@ -47,107 +48,53 @@ jobs:
             echo "  - Commit: ${{ github.sha }}"
             echo ""
             
-            # Create app directory if it doesn't exist
-            if [ ! -d "$APP_DIR" ]; then
-              echo "📁 Creating app directory..."
-              mkdir -p "$APP_DIR"
-            fi
-            
+            # Go to app directory
             cd "$APP_DIR"
             
-            # Clone or pull latest code
-            if [ ! -d ".git" ]; then
-              echo "📥 Cloning repository..."
-              git clone "$REPO_URL" .
-              git checkout "$BRANCH"
-            else
-              echo "🔄 Pulling latest changes..."
-              git fetch origin
-              git reset --hard "origin/$BRANCH"
-              git clean -fd
-            fi
+            # Pull latest code
+            echo "🔄 Pulling latest changes..."
+            git fetch origin
+            git reset --hard "origin/$BRANCH"
+            git clean -fd
             
             echo ""
             echo "========================================="
             echo "🔧 Backend Deployment"
             echo "========================================="
             
-            # Backend deployment
             cd "$APP_DIR/backend"
             
-            # Create/preserve .env file
-            if [ ! -f ".env" ]; then
-              echo "⚠️  Backend .env not found - creating from template"
-              cat > .env << 'ENVEOF'
-            # PostgreSQL Database
-            DATABASE_URL=postgresql+asyncpg://postgres:PASSWORD@HOST:5432/postgres
-            
-            # Authentication
-            MOCK_OTP_MODE=true
-            MOCK_OTP_VALUE=123456
-            JWT_SECRET=your-secret-key-here
-            JWT_ALGORITHM=HS256
-            JWT_EXPIRATION_HOURS=24
-            
-            # OpenRouter API Key
-            OPENROUTER_API_KEY=your-openrouter-key-here
-            
-            # AWS S3 Storage
-            AWS_ACCESS_KEY_ID=your-aws-key
-            AWS_SECRET_ACCESS_KEY=your-aws-secret
-            S3_BUCKET_NAME=your-bucket-name
-            AWS_REGION=ap-south-1
-            
-            # Admin Credentials
-            ADMIN_USERNAME=admin
-            ADMIN_PASSWORD=Admin@123
-            ENV=production
-            ENVEOF
-              echo "⚠️  Please update backend/.env with actual credentials!"
-            else
-              echo "✅ Backend .env exists"
-            fi
-            
-            # Install Python dependencies
+            # Activate virtual environment and install dependencies
             echo "📦 Installing Python dependencies..."
-            pip3 install -q -r requirements.txt
+            source "$VENV_DIR/bin/activate"
+            grep -v "emergentintegrations" requirements.txt > requirements_ec2.txt
+            pip install -q -r requirements_ec2.txt
             
-            # Stop backend service
-            echo "🛑 Stopping backend service..."
-            sudo systemctl stop studybuddy-backend 2>/dev/null || echo "Service not running"
-            
-            # Start backend service
-            echo "▶️  Starting backend service..."
-            sudo systemctl start studybuddy-backend
-            sleep 3
+            # Restart backend service
+            echo "🔄 Restarting backend service..."
+            sudo systemctl restart studybuddy-backend
+            sleep 5
             
             # Check backend status
             if sudo systemctl is-active --quiet studybuddy-backend; then
               echo "✅ Backend service is running"
             else
               echo "❌ Backend service failed to start"
-              sudo journalctl -u studybuddy-backend -n 20 --no-pager
+              sudo journalctl -u studybuddy-backend -n 50 --no-pager
               exit 1
             fi
+            
+            # Test API
+            echo "🧪 Testing API..."
+            curl -f http://localhost:8001/api/ || exit 1
+            echo "✅ API is responding"
             
             echo ""
             echo "========================================="
             echo "🎨 Frontend Deployment"
             echo "========================================="
             
-            # Frontend deployment
             cd "$APP_DIR/frontend"
-            
-            # Create/preserve .env file
-            if [ ! -f ".env" ]; then
-              echo "⚠️  Frontend .env not found - creating template"
-              cat > .env << 'ENVEOF'
-            REACT_APP_BACKEND_URL=https://your-domain.com
-            ENVEOF
-              echo "⚠️  Please update frontend/.env with actual backend URL!"
-            else
-              echo "✅ Frontend .env exists"
-            fi
             
             # Install Node dependencies
             echo "📦 Installing Node dependencies..."
@@ -171,6 +118,7 @@ jobs:
               echo "✅ Nginx is running"
             else
               echo "❌ Nginx failed"
+              sudo systemctl status nginx --no-pager
               exit 1
             fi
             
@@ -183,7 +131,7 @@ jobs:
             echo "🔍 Service Status:"
             sudo systemctl status studybuddy-backend --no-pager -l | head -10
             echo ""
-            echo "🌐 Application should be available at your domain"
+            echo "🌐 Application should be available at http://13.201.25.124"
             echo "========================================="
 
       - name: Deployment Status
