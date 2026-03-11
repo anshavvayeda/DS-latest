@@ -439,7 +439,7 @@ function StudentContentViewer({ chapter, subject, onBack }) {
           </h3>
           
           <div className="options-list">
-            {q.options.map((option, idx) => (
+            {(Array.isArray(q.options) ? q.options : []).map((option, idx) => (
               <button
                 key={idx}
                 className={`option-btn ${

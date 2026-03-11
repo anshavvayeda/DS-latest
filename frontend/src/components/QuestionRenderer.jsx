@@ -107,7 +107,8 @@ const SectionHeader = ({ sectionId, sectionTitle, sectionInstruction }) => {
 
 // MCQ Question Component
 const MCQQuestion = ({ question, answer, onChange, disabled }) => {
-  const options = question.options || [];
+  const rawOptions = question.options;
+  const options = Array.isArray(rawOptions) ? rawOptions : [];
   
   return (
     <div className="mcq-options" style={{
