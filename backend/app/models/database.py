@@ -678,6 +678,158 @@ class AIContentCache(Base):
 # DATABASE INITIALIZATION
 # =============================================================================
 
+# ============================================================================
+# STRUCTURED TEST & AI EVALUATION SYSTEM
+# ============================================================================
+
+class StructuredTest(Base):
+    """Tests created via structured question builder (not PDF upload)"""
+    __tablename__ = "structured_tests"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    subject_id = Column(String(36), ForeignKey('subjects.id', ondelete='CASCADE'), nullable=False, index=True)
+    standard = Column(Integer, nullable=False, index=True)
+    title = Column(String(500), nullable=False)
+    school_name = Column(String(500), nullable=True)
+    created_by = Column(String(36), ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    
+    total_marks = Column(Float, nullable=False, default=0)
+    duration_minutes = Column(Integer, nullable=False, default=60)
+    submission_deadline = Column(DateTime(timezone=True), nullable=False)
+    
+    status = Column(String(20), default='draft')  # draft, active, expired
+    question_count = Column(Integer, default=0)
+    
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    
+    __table_args__ = (
+        Index('idx_stest_subject_standard', 'subject_id', 'standard'),
+        Index('idx_stest_school', 'school_name'),
+    )
+
+
+class StructuredQuestion(Base):
+    """Individual questions with structured evaluation criteria"""
+    __tablename__ = "structured_questions"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    test_id = Column(String(36), ForeignKey('structured_tests.id', ondelete='CASCADE'), nullable=False, index=True)
+    question_number = Column(Integer, nullable=False)
+    
+    question_type = Column(String(30), nullable=False)
+    # Types: mcq, true_false, fill_blank, one_word, match_following, short_answer, long_answer, numerical
+    
+    question_text = Column(Text, nullable=False)
+    max_marks = Column(Float, nullable=False)
+    
+    model_answer = Column(Text, nullable=True)
+    
+    # For objective questions (stored as JSON)
+    # MCQ: {options: {a:"...",b:"...",c:"...",d:"..."}, correct: "a"}
+    # True/False: {correct: true/false}
+    # One Word: {correct: "word"}
+    # Fill Blank: {correct: "answer"}
+    # Match: {pairs: [{left:"...",right:"..."}]}
+    objective_data = Column(JSON, nullable=True)
+    
+    # Evaluation points for subjective questions (JSON array)
+    # [{id:1, title:"Definition", expected_concept:"...", marks:2}, ...]
+    evaluation_points = Column(JSON, nullable=True)
+    
+    # Solution steps for numerical questions (JSON array)
+    # [{id:1, title:"Write formula", expected:"Area = pi*r^2", marks:1}, ...]
+    solution_steps = Column(JSON, nullable=True)
+    
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    
+    __table_args__ = (
+        Index('idx_sq_test_qnum', 'test_id', 'question_number'),
+    )
+
+
+class StructuredTestSubmission(Base):
+    """Student submissions for structured tests"""
+    __tablename__ = "structured_test_submissions"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    test_id = Column(String(36), ForeignKey('structured_tests.id', ondelete='CASCADE'), nullable=False, index=True)
+    student_id = Column(String(36), ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    roll_no = Column(String(50), nullable=False)
+    
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    submitted_at = Column(DateTime(timezone=True), nullable=True)
+    time_taken_seconds = Column(Integer, nullable=True)
+    auto_submitted = Column(Boolean, default=False)
+    submitted = Column(Boolean, default=False)
+    
+    # Answers JSON: {"1": "answer text", "2": "b", ...}
+    answers_json = Column(JSON, nullable=True)
+    
+    # Evaluation status
+    evaluation_status = Column(String(20), default='pending')  # pending, evaluating, completed, failed
+    
+    # Summary scores (kept permanently)
+    total_score = Column(Float, nullable=True)
+    max_score = Column(Float, nullable=True)
+    percentage = Column(Float, nullable=True)
+    class_rank = Column(Integer, nullable=True)
+    improvement_summary = Column(Text, nullable=True)  # Brief improvement points for PTM
+    
+    evaluated_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Teacher review
+    teacher_reviewed = Column(Boolean, default=False)
+    teacher_reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    teacher_final_score = Column(Float, nullable=True)
+    
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    
+    __table_args__ = (
+        Index('idx_sts_test_student', 'test_id', 'student_id'),
+    )
+
+
+class EvaluationResult(Base):
+    """Detailed per-question evaluation feedback (TTL: 1 month)"""
+    __tablename__ = "evaluation_results"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    submission_id = Column(String(36), ForeignKey('structured_test_submissions.id', ondelete='CASCADE'), nullable=False, index=True)
+    question_id = Column(String(36), ForeignKey('structured_questions.id', ondelete='CASCADE'), nullable=False)
+    question_number = Column(Integer, nullable=False)
+    
+    student_answer = Column(Text, nullable=True)
+    marks_awarded = Column(Float, nullable=False, default=0)
+    max_marks = Column(Float, nullable=False)
+    
+    # Detailed feedback JSON
+    # {
+    #   evaluation_points: [{title, covered: bool, explanation, marks_given}],
+    #   steps_evaluation: [{title, completed: bool, explanation, marks_given}],
+    #   overall_feedback: "...",
+    #   improvement_suggestions: "..."
+    # }
+    feedback_json = Column(JSON, nullable=True)
+    
+    # Verification
+    verified = Column(Boolean, default=False)
+    verification_notes = Column(Text, nullable=True)
+    
+    # Teacher override
+    teacher_marks = Column(Float, nullable=True)
+    teacher_comment = Column(Text, nullable=True)
+    
+    expires_at = Column(DateTime(timezone=True), nullable=False)  # 1 month from evaluation
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    
+    __table_args__ = (
+        Index('idx_er_submission', 'submission_id'),
+        Index('idx_er_expires', 'expires_at'),
+    )
+
+
+
 async def init_db():
     """
     Initialize database tables and perform health check.

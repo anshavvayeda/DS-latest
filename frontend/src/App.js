@@ -12,6 +12,7 @@ import ProfileDropdown from '@/components/ProfileDropdown';
 import '@/components/ProfileDropdown.css';
 import HomeworkAnswering from '@/components/HomeworkAnswering';
 import TestManagement from '@/components/TestManagement';
+import StructuredTestCreator from '@/components/StructuredTestCreator';
 import TestTaking from '@/components/TestTaking';
 import TeacherUpload from '@/components/TeacherUpload';
 import '@/components/TeacherUpload.css';
@@ -3153,6 +3154,7 @@ function TeacherView({ user, language }) {
   
   // UNIFIED EXTRACTION PROGRESS STATE (for homework, pyq, textbook)
   const [showProgressModal, setShowProgressModal] = useState(false);
+  const [showAITestCreator, setShowAITestCreator] = useState(false);
   const [extractionContentId, setExtractionContentId] = useState(null);
   const [extractionContentType, setExtractionContentType] = useState(''); // 'homework', 'pyq', 'test'
   const [extractionProgress, setExtractionProgress] = useState(0);
@@ -4154,7 +4156,36 @@ function TeacherView({ user, language }) {
        )}
        {/* Tests Tab Content */}
        {activeTab === 'tests' && (
-         <TestManagement subjectId={selectedSubject.id} standard={standard} />
+         showAITestCreator ? (
+           <StructuredTestCreator 
+             subjects={subjects} 
+             standard={standard} 
+             schoolName={user.school_name}
+             onBack={() => setShowAITestCreator(false)}
+           />
+         ) : (
+           <div>
+             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+               <button
+                 data-testid="create-ai-test-btn"
+                 onClick={() => setShowAITestCreator(true)}
+                 style={{
+                   background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                   color: 'white',
+                   border: 'none',
+                   padding: '10px 20px',
+                   borderRadius: 8,
+                   fontWeight: 600,
+                   cursor: 'pointer',
+                   fontSize: 14,
+                 }}
+               >
+                 + Create AI-Evaluated Test
+               </button>
+             </div>
+             <TestManagement subjectId={selectedSubject.id} standard={standard} />
+           </div>
+         )
        )}
 
        {/* UNIFIED EXTRACTION PROGRESS MODAL (within subject view) */}

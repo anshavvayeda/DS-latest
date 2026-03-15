@@ -19,7 +19,8 @@ from app.models.database import (
     Quiz, PreviousYearPaper, get_redis, init_redis,
     StudentProfile, StudentExamScore, StudentPracticeProgress, StudentHomeworkStatus,
     Homework, HomeworkSolution, HomeworkQuestions, HomeworkSubmission, StudyMaterial, AICache,
-    Test, TestQuestion, TestSubmission, StudentPerformance, AsyncSessionLocal
+    Test, TestQuestion, TestSubmission, StudentPerformance, AsyncSessionLocal,
+    StructuredTest, StructuredQuestion, StructuredTestSubmission, EvaluationResult
 )
 from app.services.auth_service import (
     create_otp, verify_otp, get_or_create_user, create_jwt_token, decode_jwt_token
@@ -7354,3 +7355,8 @@ async def get_teacher_analytics(
 # REGISTER ALL ROUTES - MUST BE AT THE END
 # ============================================================================
 app.include_router(api_router)
+
+# Register structured test routes
+from app.routes.structured_tests import router as structured_tests_router
+app.include_router(structured_tests_router, prefix="/api")
+
