@@ -1862,17 +1862,27 @@ function StudentView({ user, language, isTeacherPreview = false }) {
   }, [showFrequentPYQs, selectedSubject, user, frequentPYQsData]);  // Added back frequentPYQsData to dependencies
 
   const selectSubject = async (subject) => {
+    console.log('[selectSubject] called for:', subject.name, subject.id);
     setSelectedSubject(subject);
     setContentSource('ncert'); // Default to NCERT content
     setLoading(true);
     
     try {
-      // Load chapters
-      const chaptersResponse = await axios.get(`${API}/subjects/${subject.id}/chapters`);
-      let chaptersData = chaptersResponse.data;
+      // Load ALL data in parallel for speed
+      console.log('[selectSubject] fetching all data in parallel...');
       
-      // Translate chapter names if Gujarati
-      if (language === 'gujarati') {
+      const [chaptersRes, pyqsRes, homeworkRes, testsRes, aiTestsRes] = await Promise.allSettled([
+        axios.get(`${API}/subjects/${subject.id}/chapters`),
+        axios.get(`${API}/subjects/${subject.id}/pyqs?standard=${standard}`),
+        axios.get(`${API}/homework?standard=${standard}&subject_id=${subject.id}`, { withCredentials: true }),
+        axios.get(`${API}/tests/subject/${subject.id}/standard/${standard}`, { withCredentials: true }),
+        axios.get(`${API}/structured-tests/list/${subject.id}/${standard}`, { withCredentials: true }),
+      ]);
+      
+      // Process chapters
+      let chaptersData = chaptersRes.status === 'fulfilled' ? chaptersRes.value.data : [];
+      if (!Array.isArray(chaptersData)) chaptersData = [];
+      if (language === 'gujarati' && chaptersData.length > 0) {
         const chapterNames = chaptersData.map(ch => ch.name);
         const translations = await translateBatch(chapterNames, language, 'education');
         chaptersData = chaptersData.map(chapter => ({
@@ -1880,46 +1890,29 @@ function StudentView({ user, language, isTeacherPreview = false }) {
           name: translations[chapter.name] || chapter.name
         }));
       }
-      
       setChapters(chaptersData);
       
-      // Load PYQs for this subject and standard
-      const pyqsResponse = await axios.get(`${API}/subjects/${subject.id}/pyqs?standard=${standard}`);
-      setPyqs(pyqsResponse.data);
+      // Process PYQs
+      setPyqs(pyqsRes.status === 'fulfilled' ? pyqsRes.value.data : []);
       
-      // Load homework for this subject and standard
-      try {
-        const homeworkResponse = await axios.get(`${API}/homework?standard=${standard}&subject_id=${subject.id}`, { withCredentials: true });
-        setHomeworkList(homeworkResponse.data);
-      } catch (err) {
-        console.error('Error loading homework:', err);
-        setHomeworkList([]);
-      }
+      // Process homework
+      setHomeworkList(homeworkRes.status === 'fulfilled' ? homeworkRes.value.data : []);
       
-      // Load tests for this subject and standard
-      try {
-        console.log('Loading tests from API:', `${API}/tests/subject/${subject.id}/standard/${standard}`);
-        const testsResponse = await axios.get(`${API}/tests/subject/${subject.id}/standard/${standard}`, { withCredentials: true });
-        console.log('Tests response:', testsResponse.data);
-        setTestList(testsResponse.data.tests || []);
-      } catch (err) {
-        console.error('Error loading tests:', err);
-        console.error('Error details:', err.response?.data);
-        setTestList([]);
-      }
+      // Process old tests
+      const testsData = testsRes.status === 'fulfilled' ? testsRes.value.data : { tests: [] };
+      setTestList(testsData.tests || []);
       
-      // Load AI-evaluated structured tests
-      try {
-        console.log('Fetching AI tests from:', `${API}/structured-tests/list/${subject.id}/${standard}`);
-        const aiTestsRes = await axios.get(`${API}/structured-tests/list/${subject.id}/${standard}`, { withCredentials: true });
-        console.log('AI Tests response:', aiTestsRes.data);
-        setAiTestList(aiTestsRes.data || []);
-      } catch (err) {
-        console.error('Error loading AI tests:', err?.message || err);
-        console.error('Error response:', err?.response?.data);
-        setAiTestList([]);
-      }
+      // Process AI tests
+      const aiTestsData = aiTestsRes.status === 'fulfilled' ? aiTestsRes.value.data : [];
+      setAiTestList(Array.isArray(aiTestsData) ? aiTestsData : []);
       
+      console.log('[selectSubject] ALL data loaded:', {
+        chapters: chaptersData.length,
+        pyqs: pyqsRes.status,
+        homework: homeworkRes.status,
+        tests: testsRes.status,
+        aiTests: aiTestsRes.status === 'fulfilled' ? aiTestsData.length : 0,
+      });
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {

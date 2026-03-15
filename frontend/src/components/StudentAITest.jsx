@@ -2,8 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import './StudentAITest.css';
 
-// API URL
-const API = process.env.REACT_APP_BACKEND_URL;
+// API URL - includes /api prefix for Kubernetes ingress routing
+const API = process.env.REACT_APP_BACKEND_URL
+  ? `${process.env.REACT_APP_BACKEND_URL}/api`
+  : '/api';
 
 const QUESTION_TYPE_LABELS = {
   mcq: 'Multiple Choice',
@@ -35,7 +37,7 @@ export default function StudentAITest({ test, userId, onClose }) {
         if (test.submitted) {
           setPhase('loading');
           const res = await axios.get(
-            `${API}/api/structured-tests/${test.id}/results/${userId}`,
+            `${API}/structured-tests/${test.id}/results/${userId}`,
             { withCredentials: true }
           );
           setResults(res.data);
@@ -45,7 +47,7 @@ export default function StudentAITest({ test, userId, onClose }) {
 
         // Start the test
         const startRes = await axios.post(
-          `${API}/api/structured-tests/${test.id}/start`,
+          `${API}/structured-tests/${test.id}/start`,
           {},
           { withCredentials: true }
         );
@@ -54,7 +56,7 @@ export default function StudentAITest({ test, userId, onClose }) {
 
         // Fetch test questions
         const testRes = await axios.get(
-          `${API}/api/structured-tests/${test.id}`,
+          `${API}/structured-tests/${test.id}`,
           { withCredentials: true }
         );
         setQuestions(testRes.data.questions || []);
@@ -66,7 +68,7 @@ export default function StudentAITest({ test, userId, onClose }) {
           // Fetch results
           try {
             const res = await axios.get(
-              `${API}/api/structured-tests/${test.id}/results/${userId}`,
+              `${API}/structured-tests/${test.id}/results/${userId}`,
               { withCredentials: true }
             );
             setResults(res.data);
@@ -110,7 +112,7 @@ export default function StudentAITest({ test, userId, onClose }) {
     setError('');
     try {
       const res = await axios.post(
-        `${API}/api/structured-tests/${test.id}/submit`,
+        `${API}/structured-tests/${test.id}/submit`,
         { answers },
         { withCredentials: true }
       );
