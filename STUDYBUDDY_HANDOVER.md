@@ -197,7 +197,7 @@ EOF
 ### Step 3: Create Frontend .env
 ```bash
 cat > /app/frontend/.env << 'EOF'
-REACT_APP_BACKEND_URL=https://YOUR-PREVIEW-URL.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://auto-grading-1.preview.emergentagent.com
 WDS_SOCKET_PORT=443
 ENABLE_HEALTH_CHECK=false
 EOF

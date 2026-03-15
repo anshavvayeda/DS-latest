@@ -31,11 +31,10 @@ const emptyQuestion = () => ({
   solution_steps: [],
 });
 
-export default function StructuredTestCreator({ subjects, standard, schoolName, onBack }) {
+export default function StructuredTestCreator({ subjectId, subjectName, standard, schoolName, onBack }) {
   const [step, setStep] = useState('setup'); // setup, questions, preview
   const [testInfo, setTestInfo] = useState({
     title: '',
-    subject_id: '',
     duration_minutes: 60,
     submission_deadline: '',
   });
@@ -171,7 +170,7 @@ export default function StructuredTestCreator({ subjects, standard, schoolName, 
       let tid = testId;
       if (!tid) {
         const resp = await axios.post(`${API}/api/structured-tests`, {
-          subject_id: testInfo.subject_id,
+          subject_id: subjectId,
           standard,
           title: testInfo.title,
           school_name: schoolName,
@@ -215,6 +214,10 @@ export default function StructuredTestCreator({ subjects, standard, schoolName, 
         </div>
         <div className="stc-setup-form">
           <div className="stc-field">
+            <label>Subject</label>
+            <div className="stc-readonly-field">{subjectName}</div>
+          </div>
+          <div className="stc-field">
             <label>Test Title</label>
             <input
               data-testid="stc-title-input"
@@ -223,19 +226,6 @@ export default function StructuredTestCreator({ subjects, standard, schoolName, 
               onChange={e => setTestInfo({ ...testInfo, title: e.target.value })}
               placeholder="e.g. Math Chapter 3 - Unit Test"
             />
-          </div>
-          <div className="stc-field">
-            <label>Subject</label>
-            <select
-              data-testid="stc-subject-select"
-              value={testInfo.subject_id}
-              onChange={e => setTestInfo({ ...testInfo, subject_id: e.target.value })}
-            >
-              <option value="">Select Subject</option>
-              {(subjects || []).map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
           </div>
           <div className="stc-row">
             <div className="stc-field">
@@ -260,7 +250,7 @@ export default function StructuredTestCreator({ subjects, standard, schoolName, 
           <button
             className="stc-primary-btn"
             data-testid="stc-proceed-btn"
-            disabled={!testInfo.title || !testInfo.subject_id || !testInfo.submission_deadline}
+            disabled={!testInfo.title || !testInfo.submission_deadline}
             onClick={() => setStep('questions')}
           >
             Proceed to Add Questions

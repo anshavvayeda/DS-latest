@@ -13,6 +13,8 @@ import '@/components/ProfileDropdown.css';
 import HomeworkAnswering from '@/components/HomeworkAnswering';
 import TestManagement from '@/components/TestManagement';
 import StructuredTestCreator from '@/components/StructuredTestCreator';
+import StudentAITest from '@/components/StudentAITest';
+import '@/components/StudentAITest.css';
 import TestTaking from '@/components/TestTaking';
 import TeacherUpload from '@/components/TeacherUpload';
 import '@/components/TeacherUpload.css';
@@ -1627,6 +1629,10 @@ function StudentView({ user, language, isTeacherPreview = false }) {
   const [testList, setTestList] = useState([]);
   const [selectedTest, setSelectedTest] = useState(null);
   
+  // AI-Evaluated (Structured) Test states
+  const [aiTestList, setAiTestList] = useState([]);
+  const [selectedAITest, setSelectedAITest] = useState(null);
+  
   // Student classification for quiz filtering
   const [studentClassification, setStudentClassification] = useState('average');
   
@@ -1900,6 +1906,18 @@ function StudentView({ user, language, isTeacherPreview = false }) {
         console.error('Error loading tests:', err);
         console.error('Error details:', err.response?.data);
         setTestList([]);
+      }
+      
+      // Load AI-evaluated structured tests
+      try {
+        console.log('Fetching AI tests from:', `${API}/structured-tests/list/${subject.id}/${standard}`);
+        const aiTestsRes = await axios.get(`${API}/structured-tests/list/${subject.id}/${standard}`, { withCredentials: true });
+        console.log('AI Tests response:', aiTestsRes.data);
+        setAiTestList(aiTestsRes.data || []);
+      } catch (err) {
+        console.error('Error loading AI tests:', err?.message || err);
+        console.error('Error response:', err?.response?.data);
+        setAiTestList([]);
       }
       
     } catch (error) {
@@ -2206,7 +2224,7 @@ function StudentView({ user, language, isTeacherPreview = false }) {
   }
 
   // Step 3: Two Column Layout - Chapters and PYQs
-  if (!selectedChapter && !selectedPYQ && !selectedHomework && !selectedTest) {
+  if (!selectedChapter && !selectedPYQ && !selectedHomework && !selectedTest && !selectedAITest) {
     return (
       <div className="student-view">
         {isTeacherPreview && (
@@ -2385,6 +2403,76 @@ function StudentView({ user, language, isTeacherPreview = false }) {
         {/* Tests Section */}
         <div className="tests-section" style={{ marginTop: '30px' }}>
           <h3 className="section-header">🧪 {t('Tests')}</h3>
+          
+          {/* AI-Evaluated Tests */}
+          {aiTestList.length > 0 && (
+            <div style={{ marginBottom: '20px' }}>
+              <h4 style={{ color: '#c4b5fd', fontSize: '14px', fontWeight: 600, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                AI-Evaluated Tests
+              </h4>
+              <div className="tests-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' }}>
+                {aiTestList.map((aiTest) => (
+                  <div 
+                    key={aiTest.id} 
+                    className="test-card"
+                    data-testid={`ai-test-${aiTest.id}`}
+                    style={{ 
+                      borderRadius: '12px',
+                      padding: '20px',
+                      color: 'white',
+                      boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+                      border: '2px solid rgba(102, 126, 234, 0.4)',
+                      background: 'linear-gradient(135deg, rgba(102,126,234,0.15), rgba(118,75,162,0.15))'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                      <span style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)', padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>AI</span>
+                      <h4 style={{ margin: 0, fontSize: '16px' }}>{aiTest.title}</h4>
+                    </div>
+                    <p style={{ margin: '5px 0', fontSize: '13px', opacity: '0.9' }}>
+                      {aiTest.question_count} questions | {aiTest.total_marks} marks
+                    </p>
+                    <p style={{ margin: '5px 0', fontSize: '13px', opacity: '0.9' }}>
+                      Duration: {aiTest.duration_minutes} min
+                    </p>
+                    <p style={{ margin: '5px 0', fontSize: '13px', opacity: '0.9' }}>
+                      Deadline: {aiTest.submission_deadline ? new Date(aiTest.submission_deadline).toLocaleDateString() : 'N/A'}
+                    </p>
+                    {aiTest.submitted && aiTest.score !== null && (
+                      <p style={{ margin: '10px 0 0', fontSize: '14px', background: 'rgba(255,255,255,0.15)', padding: '6px 12px', borderRadius: '6px', fontWeight: 600 }}>
+                        Score: {aiTest.score}/{aiTest.total_marks} ({aiTest.percentage}%)
+                      </p>
+                    )}
+                    <div style={{ marginTop: '15px' }}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          console.log('AI Test button clicked! Setting selectedAITest to:', aiTest.title);
+                          setSelectedAITest(aiTest);
+                        }}
+                        data-testid={`ai-test-action-${aiTest.id}`}
+                        style={{
+                          background: aiTest.submitted ? '#667eea' : '#10b981',
+                          color: 'white',
+                          padding: '10px 20px',
+                          borderRadius: '20px',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          width: '100%'
+                        }}
+                      >
+                        {aiTest.submitted ? 'View Results' : 'Attempt Test'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Regular Tests */}
           {testList.length > 0 ? (
             <div className="tests-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' }}>
               {testList.map((test) => (
@@ -2441,9 +2529,9 @@ function StudentView({ user, language, isTeacherPreview = false }) {
                 </div>
               ))}
             </div>
-          ) : (
+          ) : aiTestList.length === 0 && (
             <div className="info-box">
-              <p style={{ margin: 0 }}>📝 No tests scheduled yet.</p>
+              <p style={{ margin: 0 }}>No tests scheduled yet.</p>
             </div>
           )}
         </div>
@@ -2454,7 +2542,30 @@ function StudentView({ user, language, isTeacherPreview = false }) {
   console.log('StudentView render - selectedTest:', selectedTest ? 'YES' : 'NO');
   console.log('StudentView render - selectedHomework:', selectedHomework ? 'YES' : 'NO');
   console.log('StudentView render - selectedSubject:', selectedSubject ? selectedSubject.name : 'NO');
+  console.log('StudentView render - selectedAITest:', selectedAITest ? selectedAITest.title : 'NO');
   
+  // AI-Evaluated Test Taking/Results View
+  if (selectedAITest) {
+    console.log('Rendering StudentAITest for:', selectedAITest.title);
+    return (
+      <div className="student-view">
+        <StudentAITest
+          test={selectedAITest}
+          userId={user?.id}
+          onClose={() => {
+            setSelectedAITest(null);
+            // Reload AI tests to update status
+            if (selectedSubject && standard) {
+              axios.get(`${API}/structured-tests/list/${selectedSubject.id}/${standard}`, { withCredentials: true })
+                .then(res => setAiTestList(res.data || []))
+                .catch(err => console.error('Error reloading AI tests:', err));
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
   // Test Taking View
   if (selectedTest) {
     console.log('Rendering TestTaking component for test:', selectedTest);
@@ -4158,7 +4269,8 @@ function TeacherView({ user, language }) {
        {activeTab === 'tests' && (
          showAITestCreator ? (
            <StructuredTestCreator 
-             subjects={subjects} 
+             subjectId={selectedSubject.id}
+             subjectName={selectedSubject.name}
              standard={standard} 
              schoolName={user.school_name}
              onBack={() => setShowAITestCreator(false)}

@@ -11,7 +11,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://lms-auth-fix.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://auto-grading-1.preview.emergentagent.com')
 
 # Test credentials from the review request
 TEACHER_PHONE = "9999900001"

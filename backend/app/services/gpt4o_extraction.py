@@ -162,7 +162,7 @@ async def extract_text_from_pdf_via_openrouter(pdf_bytes: bytes, test_id: str) -
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://lms-auth-fix.preview.emergentagent.com",
+        "HTTP-Referer": "https://auto-grading-1.preview.emergentagent.com",
         "X-Title": "StudyBuddy PDF Extraction"
     }
     
@@ -225,7 +225,7 @@ async def call_openrouter(prompt: str, system_message: str, max_tokens: int = 40
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://lms-auth-fix.preview.emergentagent.com",
+        "HTTP-Referer": "https://auto-grading-1.preview.emergentagent.com",
         "X-Title": "StudyBuddy AI Tutor"
     }
     
