@@ -41,7 +41,6 @@ export default function StructuredTestCreator({ subjectId, subjectName, standard
   const [questions, setQuestions] = useState([emptyQuestion()]);
   const [activeQ, setActiveQ] = useState(0);
   const [testId, setTestId] = useState(null);
-  const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -163,10 +162,11 @@ export default function StructuredTestCreator({ subjectId, subjectName, standard
     return parseFloat(currentQ.max_marks) || 0;
   })();
 
-  const handleSave = async () => {
-    setSaving(true);
+  const handleSaveAndPublish = async () => {
+    setPublishing(true);
     setMessage('');
     try {
+      // Step 1: Create test if not yet created
       let tid = testId;
       if (!tid) {
         const resp = await axios.post(`${API}/api/structured-tests`, {
@@ -181,28 +181,9 @@ export default function StructuredTestCreator({ subjectId, subjectName, standard
         tid = resp.data.id;
         setTestId(tid);
       }
+      // Step 2: Save all questions
       await axios.post(`${API}/api/structured-tests/${tid}/questions`, { questions });
-      setMessage('Draft saved! Test is NOT yet visible to students.');
-      setSaving(false);
-      return tid;
-    } catch (err) {
-      setMessage('Error: ' + (err.response?.data?.detail || err.message));
-      setSaving(false);
-      return null;
-    }
-  };
-
-  const handlePublish = async () => {
-    setPublishing(true);
-    setMessage('');
-    try {
-      // ALWAYS save questions first (whether draft exists or not)
-      const tid = await handleSave();
-      if (!tid) {
-        setMessage('Error: Could not save test before publishing.');
-        setPublishing(false);
-        return;
-      }
+      // Step 3: Publish
       await axios.post(`${API}/api/structured-tests/${tid}/publish`);
       setMessage('Test published! Students can now take it.');
     } catch (err) {
@@ -552,16 +533,8 @@ export default function StructuredTestCreator({ subjectId, subjectName, standard
       {/* Actions */}
       <div className="stc-actions">
         <button
-          className="stc-save-btn"
-          onClick={handleSave}
-          disabled={saving}
-          data-testid="stc-save-btn"
-        >
-          {saving ? 'Saving...' : 'Save Draft'}
-        </button>
-        <button
           className="stc-publish-btn"
-          onClick={handlePublish}
+          onClick={handleSaveAndPublish}
           disabled={publishing || questions.some(q => !q.question_text)}
           data-testid="stc-publish-btn"
         >

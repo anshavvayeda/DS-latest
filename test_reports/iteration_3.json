@@ -1,0 +1,81 @@
+{
+  "summary": "StudyBuddy LMS bug fixes verified - Both backend and frontend testing passed. 1) 'Save Draft' button removed from StructuredTestCreator - only single 'Save & Publish' button exists. 2) Published AI tests list in teacher's Create Test tab working correctly showing test titles, Published/Draft status badges, question count, marks, duration, deadline. 3) Draft tests NOT visible to students, only published tests appear.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_structured_tests.py",
+    "/app/test_reports/pytest/structured_tests_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [
+    "/app/backend/tests/test_structured_tests.py"
+  ],
+  "success_rate": {
+    "backend": "100% (11/11 tests passed)",
+    "frontend": "100%"
+  },
+  "test_credentials": {
+    "admin": "username='admin', password='Admin@123'",
+    "student": "roll_no='S001', password='123456'",
+    "teacher": "roll_no='T001', password='123456'"
+  },
+  "seed_data_creation": "Created test data via pytest: TEST_AdminTest_*, TEST_DraftOnly_*, TEST_EmptyTest_*",
+  "retest_needed": false,
+  "main_agent_can_self_test": false,
+  "context_for_next_testing_agent": "All structured test features working. Teacher login (T001) works - navigate to Teacher tab > Standard 5 > Mathematics > Create Test tab to see AI test features. TeacherAITestsList shows both Draft and Published tests. Students only see Published (active) tests. Single 'Save & Publish' button in StructuredTestCreator has data-testid='stc-publish-btn'.",
+  "test_results": {
+    "backend_tests": {
+      "test_create_test_requires_auth": "PASSED - 401 returned without auth",
+      "test_create_test_as_admin": "PASSED - Admin can create test, status=draft",
+      "test_add_questions_to_test": "PASSED - Questions saved, total_marks calculated",
+      "test_publish_test": "PASSED - Status changes to 'active'",
+      "test_cannot_publish_without_questions": "PASSED - 400 returned",
+      "test_draft_test_not_visible_to_student": "PASSED - Student list excludes draft tests",
+      "test_published_test_visible_to_student": "PASSED - Published tests visible to students",
+      "test_teacher_sees_all_tests": "PASSED - Admin sees both draft and active",
+      "test_list_tests_response_structure": "PASSED - All fields present",
+      "test_student_cannot_create_test": "PASSED - 403 returned",
+      "test_student_cannot_publish_test": "PASSED - 403/404 returned"
+    },
+    "frontend_tests": {
+      "student_sees_only_published_tests": {
+        "status": "PASSED",
+        "description": "Student S001 logs in, clicks Mathematics, sees only active/published AI tests",
+        "findings": [
+          "AI-EVALUATED TESTS header visible",
+          "6 published tests displayed",
+          "No Draft badges visible to students",
+          "Tests show: AI badge, title, questions, marks, duration, deadline"
+        ]
+      },
+      "teacher_sees_published_ai_tests_list": {
+        "status": "PASSED",
+        "description": "Teacher view shows 'PUBLISHED AI-EVALUATED TESTS' section with both draft and published tests",
+        "findings": [
+          "'+ Create AI-Evaluated Test' button visible",
+          "'PUBLISHED AI-EVALUATED TESTS' header present",
+          "TeacherAITestsList shows both Draft (yellow badge) and Published (green badge) tests",
+          "Each test shows: AI badge, title, status badge, question count, marks, duration, deadline"
+        ]
+      },
+      "single_save_publish_button": {
+        "status": "PASSED",
+        "description": "StructuredTestCreator has only ONE 'Save & Publish' button, no 'Save Draft'",
+        "findings": [
+          "Button text: 'Save & Publish'",
+          "data-testid: 'stc-publish-btn'",
+          "Only 1 action button in stc-actions div",
+          "No 'Save Draft' text found in page"
+        ]
+      }
+    }
+  }
+}

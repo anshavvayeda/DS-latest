@@ -3251,6 +3251,64 @@ function StudentView({ user, language, isTeacherPreview = false }) {
   );
 }
 
+// Teacher's published AI tests list
+function TeacherAITestsList({ subjectId, standard }) {
+  const [tests, setTests] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  
+  React.useEffect(() => {
+    if (!subjectId || !standard) return;
+    setLoading(true);
+    axios.get(`${API}/structured-tests/list/${subjectId}/${standard}`, { withCredentials: true })
+      .then(res => setTests(res.data || []))
+      .catch(() => setTests([]))
+      .finally(() => setLoading(false));
+  }, [subjectId, standard]);
+  
+  if (loading) return <div style={{ color: '#94a3b8', padding: '12px 0', fontSize: 14 }}>Loading AI tests...</div>;
+  if (tests.length === 0) return null;
+  
+  return (
+    <div style={{ marginBottom: 24 }} data-testid="teacher-ai-tests-list">
+      <h4 style={{ color: '#c4b5fd', fontSize: 14, fontWeight: 600, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        Published AI-Evaluated Tests
+      </h4>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {tests.map(t => (
+          <div key={t.id} data-testid={`teacher-ai-test-${t.id}`} style={{
+            background: 'rgba(102,126,234,0.1)',
+            border: '1px solid rgba(102,126,234,0.3)',
+            borderRadius: 10,
+            padding: '14px 18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+          }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)', padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700, color: '#fff' }}>AI</span>
+                <span style={{ fontSize: 15, fontWeight: 600, color: '#F8FAFC' }}>{t.title}</span>
+                <span style={{
+                  fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 10,
+                  background: t.status === 'active' ? 'rgba(34,197,94,0.2)' : 'rgba(234,179,8,0.2)',
+                  color: t.status === 'active' ? '#22c55e' : '#eab308',
+                }}>{t.status === 'active' ? 'Published' : 'Draft'}</span>
+              </div>
+              <div style={{ fontSize: 13, color: '#94a3b8', display: 'flex', gap: 16 }}>
+                <span>{t.question_count} questions</span>
+                <span>{t.total_marks} marks</span>
+                <span>{t.duration_minutes} min</span>
+                {t.submission_deadline && <span>Deadline: {new Date(t.submission_deadline).toLocaleDateString()}</span>}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function TeacherView({ user, language }) {
   const [standard, setStandard] = useState(null); // NEW: Standard selection
   const [subjects, setSubjects] = useState([]);
@@ -4314,6 +4372,7 @@ function TeacherView({ user, language }) {
                  + Create AI-Evaluated Test
                </button>
              </div>
+             <TeacherAITestsList subjectId={selectedSubject.id} standard={standard} />
              <TestManagement subjectId={selectedSubject.id} standard={standard} />
            </div>
          )
