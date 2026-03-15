@@ -3291,9 +3291,8 @@ function TeacherAITestsList({ subjectId, standard }) {
                 <span style={{ fontSize: 15, fontWeight: 600, color: '#F8FAFC' }}>{t.title}</span>
                 <span style={{
                   fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 10,
-                  background: t.status === 'active' ? 'rgba(34,197,94,0.2)' : 'rgba(234,179,8,0.2)',
-                  color: t.status === 'active' ? '#22c55e' : '#eab308',
-                }}>{t.status === 'active' ? 'Published' : 'Draft'}</span>
+                  background: 'rgba(34,197,94,0.2)', color: '#22c55e',
+                }}>Published</span>
               </div>
               <div style={{ fontSize: 13, color: '#94a3b8', display: 'flex', gap: 16 }}>
                 <span>{t.question_count} questions</span>

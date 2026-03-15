@@ -53,12 +53,12 @@ async def get_current_user(
 # ============================================================================
 
 @router.post("")
-async def create_structured_test(
+async def create_and_publish_test(
     data: dict,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user)
 ):
-    """Create a new structured test."""
+    """Create a test with questions and publish it in one step. No drafts stored."""
     if user.role not in ('teacher', 'admin'):
         raise HTTPException(status_code=403, detail="Only teachers can create tests")
     
@@ -68,18 +68,44 @@ async def create_structured_test(
     except (KeyError, ValueError):
         raise HTTPException(status_code=400, detail="Valid submission_deadline required (ISO format)")
     
+    questions_data = data.get("questions", [])
+    if not questions_data:
+        raise HTTPException(status_code=400, detail="At least one question is required")
+    
+    # Calculate total marks
+    total_marks = sum(q.get("max_marks", 0) for q in questions_data)
+    
+    # Create test directly as active (published)
     test = StructuredTest(
         subject_id=data.get("subject_id"),
         standard=data.get("standard"),
         title=data.get("title", "Untitled Test"),
         school_name=data.get("school_name"),
         created_by=user.id,
-        total_marks=data.get("total_marks", 0),
+        total_marks=total_marks,
         duration_minutes=data.get("duration_minutes", 60),
         submission_deadline=deadline,
-        status="draft"
+        status="active",
+        question_count=len(questions_data)
     )
     db.add(test)
+    await db.flush()  # get test.id without committing
+    
+    # Add questions
+    for q in questions_data:
+        question = StructuredQuestion(
+            test_id=test.id,
+            question_number=q.get("question_number"),
+            question_type=q.get("question_type"),
+            question_text=q.get("question_text"),
+            max_marks=q.get("max_marks", 0),
+            model_answer=q.get("model_answer"),
+            evaluation_points=q.get("evaluation_points"),
+            solution_steps=q.get("solution_steps"),
+            objective_data=q.get("objective_data"),
+        )
+        db.add(question)
+    
     await db.commit()
     await db.refresh(test)
     
@@ -87,7 +113,9 @@ async def create_structured_test(
         "id": test.id,
         "title": test.title,
         "status": test.status,
-        "message": "Test created. Add questions next."
+        "question_count": len(questions_data),
+        "total_marks": total_marks,
+        "message": "Test published! Students can now take it."
     }
 
 
@@ -233,14 +261,12 @@ async def list_tests(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user)
 ):
-    """List structured tests for a subject/standard."""
+    """List published structured tests for a subject/standard."""
     query = select(StructuredTest).where(
         StructuredTest.subject_id == subject_id,
-        StructuredTest.standard == standard
+        StructuredTest.standard == standard,
+        StructuredTest.status == 'active'
     )
-    
-    if user.role == 'student':
-        query = query.where(StructuredTest.status == 'active')
     
     query = query.order_by(StructuredTest.created_at.desc())
     result = await db.execute(query)

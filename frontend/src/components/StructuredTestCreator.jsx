@@ -166,26 +166,17 @@ export default function StructuredTestCreator({ subjectId, subjectName, standard
     setPublishing(true);
     setMessage('');
     try {
-      // Step 1: Create test if not yet created
-      let tid = testId;
-      if (!tid) {
-        const resp = await axios.post(`${API}/api/structured-tests`, {
-          subject_id: subjectId,
-          standard,
-          title: testInfo.title,
-          school_name: schoolName,
-          total_marks: totalMarks,
-          duration_minutes: testInfo.duration_minutes,
-          submission_deadline: new Date(testInfo.submission_deadline).toISOString(),
-        });
-        tid = resp.data.id;
-        setTestId(tid);
-      }
-      // Step 2: Save all questions
-      await axios.post(`${API}/api/structured-tests/${tid}/questions`, { questions });
-      // Step 3: Publish
-      await axios.post(`${API}/api/structured-tests/${tid}/publish`);
-      setMessage('Test published! Students can now take it.');
+      const resp = await axios.post(`${API}/api/structured-tests`, {
+        subject_id: subjectId,
+        standard,
+        title: testInfo.title,
+        school_name: schoolName,
+        duration_minutes: testInfo.duration_minutes,
+        submission_deadline: new Date(testInfo.submission_deadline).toISOString(),
+        questions,
+      });
+      setTestId(resp.data.id);
+      setMessage(`Test published! ${resp.data.question_count} questions, ${resp.data.total_marks} marks.`);
     } catch (err) {
       setMessage('Error: ' + (err.response?.data?.detail || err.message));
     }
