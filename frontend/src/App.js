@@ -1862,14 +1862,12 @@ function StudentView({ user, language, isTeacherPreview = false }) {
   }, [showFrequentPYQs, selectedSubject, user, frequentPYQsData]);  // Added back frequentPYQsData to dependencies
 
   const selectSubject = async (subject) => {
-    console.log('[selectSubject] called for:', subject.name, subject.id);
     setSelectedSubject(subject);
-    setContentSource('ncert'); // Default to NCERT content
+    setContentSource('ncert');
     setLoading(true);
     
     try {
       // Load ALL data in parallel for speed
-      console.log('[selectSubject] fetching all data in parallel...');
       
       const [chaptersRes, pyqsRes, homeworkRes, testsRes, aiTestsRes] = await Promise.allSettled([
         axios.get(`${API}/subjects/${subject.id}/chapters`),
@@ -1905,14 +1903,6 @@ function StudentView({ user, language, isTeacherPreview = false }) {
       // Process AI tests
       const aiTestsData = aiTestsRes.status === 'fulfilled' ? aiTestsRes.value.data : [];
       setAiTestList(Array.isArray(aiTestsData) ? aiTestsData : []);
-      
-      console.log('[selectSubject] ALL data loaded:', {
-        chapters: chaptersData.length,
-        pyqs: pyqsRes.status,
-        homework: homeworkRes.status,
-        tests: testsRes.status,
-        aiTests: aiTestsRes.status === 'fulfilled' ? aiTestsData.length : 0,
-      });
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
