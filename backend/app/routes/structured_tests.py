@@ -630,3 +630,166 @@ async def cleanup_expired_evaluations(
     await db.commit()
     
     return {"message": f"Cleaned up expired evaluation records", "deleted": result.rowcount}
+
+
+
+# ============================================================================
+# STUDENT PERFORMANCE DASHBOARD
+# ============================================================================
+
+@router.get("/student/performance")
+async def get_student_performance(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """Get performance dashboard data for the current student."""
+    if user.role != 'student':
+        raise HTTPException(status_code=403, detail="Students only")
+    
+    # Get all completed submissions for this student
+    subs_result = await db.execute(
+        select(StructuredTestSubmission)
+        .where(
+            StructuredTestSubmission.student_id == user.id,
+            StructuredTestSubmission.submitted == True,
+            StructuredTestSubmission.evaluation_status == 'completed'
+        )
+        .order_by(StructuredTestSubmission.submitted_at.asc())
+    )
+    submissions = subs_result.scalars().all()
+    
+    if not submissions:
+        return {
+            "total_tests": 0,
+            "average_percentage": 0,
+            "best_percentage": 0,
+            "total_marks_earned": 0,
+            "total_marks_possible": 0,
+            "tests_timeline": [],
+            "subject_breakdown": [],
+            "question_type_stats": [],
+            "recent_improvement": None
+        }
+    
+    # Get test details for subject info
+    test_ids = list(set(s.test_id for s in submissions))
+    tests_result = await db.execute(
+        select(StructuredTest).where(StructuredTest.id.in_(test_ids))
+    )
+    tests_map = {t.id: t for t in tests_result.scalars().all()}
+    
+    # Get subject names
+    subject_ids = list(set(t.subject_id for t in tests_map.values()))
+    subjects_result = await db.execute(
+        select(Subject).where(Subject.id.in_(subject_ids))
+    )
+    subjects_map = {str(s.id): s.name for s in subjects_result.scalars().all()}
+    
+    # Build timeline data
+    tests_timeline = []
+    subject_scores = {}  # subject_id -> [percentages]
+    total_earned = 0
+    total_possible = 0
+    
+    for sub in submissions:
+        test = tests_map.get(sub.test_id)
+        if not test:
+            continue
+        
+        subject_name = subjects_map.get(str(test.subject_id), "Unknown")
+        pct = sub.percentage or 0
+        
+        tests_timeline.append({
+            "test_title": test.title,
+            "subject": subject_name,
+            "date": sub.submitted_at.isoformat() if sub.submitted_at else sub.created_at.isoformat(),
+            "score": sub.total_score or 0,
+            "max_score": sub.max_score or 0,
+            "percentage": round(pct, 1),
+        })
+        
+        if subject_name not in subject_scores:
+            subject_scores[subject_name] = []
+        subject_scores[subject_name].append(pct)
+        
+        total_earned += (sub.total_score or 0)
+        total_possible += (sub.max_score or 0)
+    
+    # Subject breakdown
+    subject_breakdown = []
+    for subj, scores in subject_scores.items():
+        subject_breakdown.append({
+            "subject": subj,
+            "tests_taken": len(scores),
+            "average_percentage": round(sum(scores) / len(scores), 1),
+            "best_percentage": round(max(scores), 1),
+            "latest_percentage": round(scores[-1], 1),
+        })
+    subject_breakdown.sort(key=lambda x: x["average_percentage"], reverse=True)
+    
+    # Question type analysis from evaluation results
+    question_type_stats = []
+    for sub in submissions:
+        er_result = await db.execute(
+            select(EvaluationResult)
+            .where(EvaluationResult.submission_id == sub.id)
+        )
+        eval_results = er_result.scalars().all()
+        
+        # Get questions for type info
+        q_result = await db.execute(
+            select(StructuredQuestion)
+            .where(StructuredQuestion.test_id == sub.test_id)
+        )
+        q_map = {q.question_number: q for q in q_result.scalars().all()}
+        
+        for er in eval_results:
+            q = q_map.get(er.question_number)
+            if not q:
+                continue
+            question_type_stats.append({
+                "type": q.question_type,
+                "marks_awarded": er.marks_awarded,
+                "max_marks": er.max_marks,
+            })
+    
+    # Aggregate question type stats
+    type_agg = {}
+    for stat in question_type_stats:
+        t = stat["type"]
+        if t not in type_agg:
+            type_agg[t] = {"earned": 0, "possible": 0, "count": 0}
+        type_agg[t]["earned"] += stat["marks_awarded"]
+        type_agg[t]["possible"] += stat["max_marks"]
+        type_agg[t]["count"] += 1
+    
+    qt_breakdown = []
+    for t, agg in type_agg.items():
+        pct = round((agg["earned"] / agg["possible"]) * 100, 1) if agg["possible"] > 0 else 0
+        qt_breakdown.append({
+            "type": t,
+            "questions_attempted": agg["count"],
+            "accuracy_percentage": pct,
+        })
+    qt_breakdown.sort(key=lambda x: x["accuracy_percentage"], reverse=True)
+    
+    # Recent improvement (compare last 2 tests)
+    percentages = [t["percentage"] for t in tests_timeline]
+    recent_improvement = None
+    if len(percentages) >= 2:
+        recent_improvement = round(percentages[-1] - percentages[-2], 1)
+    
+    avg_pct = round(sum(percentages) / len(percentages), 1) if percentages else 0
+    best_pct = round(max(percentages), 1) if percentages else 0
+    
+    return {
+        "total_tests": len(submissions),
+        "average_percentage": avg_pct,
+        "best_percentage": best_pct,
+        "total_marks_earned": round(total_earned, 1),
+        "total_marks_possible": round(total_possible, 1),
+        "tests_timeline": tests_timeline,
+        "subject_breakdown": subject_breakdown,
+        "question_type_stats": qt_breakdown,
+        "recent_improvement": recent_improvement,
+    }
