@@ -15,6 +15,18 @@
   color: #1e293b;
 }
 
+.homework-answering-container .homework-header,
+.homework-answering-container .homework-header * {
+  color: white;
+}
+
+.homework-answering-container .marks-badge,
+.homework-answering-container .check-answer-btn,
+.homework-answering-container .help-btn,
+.homework-answering-container .submit-homework-btn {
+  color: white;
+}
+
 
 .homework-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

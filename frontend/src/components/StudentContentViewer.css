@@ -4,6 +4,21 @@
   max-width: 1000px;
   margin: 0 auto;
   padding: 20px;
+  color: #1e293b;
+}
+
+.student-content-viewer p,
+.student-content-viewer li,
+.student-content-viewer span,
+.student-content-viewer label,
+.student-content-viewer td,
+.student-content-viewer th,
+.student-content-viewer .option-btn {
+  color: #1e293b;
+}
+
+.student-content-viewer .option-letter {
+  color: white;
 }
 
 .viewer-header {
