@@ -60,6 +60,11 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - **P0**: Login bug - After admin logout, teacher/student login fails (recurring 2x)
 - **P1**: Admin dashboard empty on EC2 (user verification pending)
 
+## Recently Fixed Bugs (Mar 15, 2026)
+- **Save Draft was not saving questions before Publish**: `handlePublish` now always calls `handleSave()` first, ensuring all questions are saved before publishing
+- **Confusing Save Draft message**: Now clearly says "Draft saved! Test is NOT yet visible to students."
+- **Parallel data fetching**: Replaced sequential awaits with `Promise.allSettled` to prevent UI hang
+
 ## Prioritized Backlog
 
 ### P0

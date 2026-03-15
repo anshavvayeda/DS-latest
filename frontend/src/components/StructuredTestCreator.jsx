@@ -182,20 +182,28 @@ export default function StructuredTestCreator({ subjectId, subjectName, standard
         setTestId(tid);
       }
       await axios.post(`${API}/api/structured-tests/${tid}/questions`, { questions });
-      setMessage('Test saved successfully!');
+      setMessage('Draft saved! Test is NOT yet visible to students.');
+      setSaving(false);
+      return tid;
     } catch (err) {
       setMessage('Error: ' + (err.response?.data?.detail || err.message));
+      setSaving(false);
+      return null;
     }
-    setSaving(false);
   };
 
   const handlePublish = async () => {
-    if (!testId) {
-      await handleSave();
-    }
     setPublishing(true);
+    setMessage('');
     try {
-      await axios.post(`${API}/api/structured-tests/${testId}/publish`);
+      // ALWAYS save questions first (whether draft exists or not)
+      const tid = await handleSave();
+      if (!tid) {
+        setMessage('Error: Could not save test before publishing.');
+        setPublishing(false);
+        return;
+      }
+      await axios.post(`${API}/api/structured-tests/${tid}/publish`);
       setMessage('Test published! Students can now take it.');
     } catch (err) {
       setMessage('Error: ' + (err.response?.data?.detail || err.message));
