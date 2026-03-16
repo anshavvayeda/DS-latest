@@ -53,6 +53,17 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - Recent tests timeline with grade badges
 - Score trend chart (bar + line overlay, appears with 2+ tests)
 
+### Student Greeting (Complete - Mar 16, 2026)
+- Added cursive greeting "Hi <name>, Which subject do you want to study today?" using Dancing Script font with gradient colors
+- Appears above the subjects grid only for students (not in teacher preview mode)
+
+### Teacher Review Mode (Complete - Mar 16, 2026)
+- Teachers can click "Review Submissions" on any AI-evaluated test to see all student submissions
+- Detailed view shows each question with student answer, AI feedback, and marks
+- Teachers can override AI marks per question and add comments
+- Save Review persists changes and recalculates final score
+- Backend endpoint POST /api/structured-tests/{test_id}/review/{student_id} handles overrides
+
 ### Parent Dashboard AI Sync (Complete - Mar 16, 2026)
 - Backend endpoint `/api/student/parent-dashboard` updated to query StructuredTestSubmission + StructuredTest
 - AI-evaluated test scores now appear in subject-wise performance cards with graphs
