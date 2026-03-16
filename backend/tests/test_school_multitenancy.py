@@ -13,7 +13,7 @@ import os
 import uuid
 
 # Use the public URL for testing
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://studybuddy-ai-120.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://backend-modules-4.preview.emergentagent.com')
 API_BASE = f"{BASE_URL}/api"
 
 # Admin credentials

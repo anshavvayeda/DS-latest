@@ -24,7 +24,7 @@ from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Base URL from environment
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://studybuddy-ai-120.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://backend-modules-4.preview.emergentagent.com')
 API_URL = f"{BASE_URL}/api"
 
 # Test credentials

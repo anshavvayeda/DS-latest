@@ -17,7 +17,7 @@ import requests
 import os
 
 # API Base URL from environment
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://studybuddy-ai-120.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://backend-modules-4.preview.emergentagent.com')
 
 # Test credentials from review request
 TEACHER_ROLL_NO = "T001"

@@ -17,7 +17,7 @@ import json
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://studybuddy-ai-120.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://backend-modules-4.preview.emergentagent.com')
 API_URL = f"{BASE_URL}/api"
 
 ADMIN_CREDS = {"username": "admin", "password": "Admin@123"}
