@@ -226,6 +226,7 @@ async def startup():
     # Start background task for test cleanup
     import asyncio
     asyncio.create_task(cleanup_expired_tests_task())
+    asyncio.create_task(retention_cleanup_task())
     
     logger.info("🎉 StudyBuddy backend started successfully")
 
@@ -336,6 +337,33 @@ async def cleanup_expired_tests_task():
         
         # Run every 60 seconds
         await asyncio.sleep(60)
+
+
+async def retention_cleanup_task():
+    """
+    Background cron job: Data retention policy for AI evaluation results.
+    Runs every 6 hours. Deletes expired EvaluationResult records (2-month TTL)
+    after condensing per-question feedback into a brief improvement summary
+    on the StructuredTestSubmission record.
+    
+    Retained permanently: scores, rank, 1-2 sentence improvement summary.
+    Deleted after 2 months: detailed per-question feedback, raw answers.
+    """
+    import asyncio
+    await asyncio.sleep(30)  # Wait for app startup
+    logger.info("📋 Data retention cleanup task started (runs every 6 hours)")
+
+    while True:
+        try:
+            async with AsyncSessionLocal() as db:
+                from app.routes.structured_tests import _condense_and_cleanup
+                deleted = await _condense_and_cleanup(db)
+                if deleted > 0:
+                    logger.info(f"🧹 Retention cleanup: deleted {deleted} expired evaluation records, summaries retained")
+        except Exception as e:
+            logger.error(f"Retention cleanup task error: {e}")
+
+        await asyncio.sleep(6 * 3600)  # Every 6 hours
 
 
 # Pydantic Models

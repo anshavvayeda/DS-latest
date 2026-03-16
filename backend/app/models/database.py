@@ -791,7 +791,7 @@ class StructuredTestSubmission(Base):
 
 
 class EvaluationResult(Base):
-    """Detailed per-question evaluation feedback (TTL: 1 month)"""
+    """Detailed per-question evaluation feedback (TTL: 2 months)"""
     __tablename__ = "evaluation_results"
     
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -820,7 +820,7 @@ class EvaluationResult(Base):
     teacher_marks = Column(Float, nullable=True)
     teacher_comment = Column(Text, nullable=True)
     
-    expires_at = Column(DateTime(timezone=True), nullable=False)  # 1 month from evaluation
+    expires_at = Column(DateTime(timezone=True), nullable=False)  # 2 months from evaluation
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     
     __table_args__ = (

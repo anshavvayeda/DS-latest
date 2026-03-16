@@ -341,3 +341,60 @@
   .trm-override-row { flex-direction: column; align-items: stretch; }
   .trm-marks-input { width: 100%; }
 }
+
+/* Retained summary (after TTL expiry) */
+.trm-retained-summary { padding: 20px 0; }
+
+.trm-retained-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 28px;
+}
+
+.trm-retained-header {
+  color: #f59e0b;
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.trm-retained-note {
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.trm-retained-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.trm-retained-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.trm-retained-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.trm-retained-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.trm-retained-improve {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: #fbbf24;
+}

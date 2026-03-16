@@ -449,7 +449,9 @@ function ResultsView({ results, test, error, onClose }) {
         </div>
       ) : (
         <div className="sat-info-box" data-testid="sat-no-details">
-          Detailed feedback has expired or is not available.
+          {results.retained_only
+            ? "Detailed question-wise feedback has been archived per the 2-month retention policy. Your scores and improvement summary above are retained for your records."
+            : "Detailed feedback has expired or is not available."}
         </div>
       )}
     </div>

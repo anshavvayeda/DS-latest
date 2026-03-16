@@ -180,7 +180,33 @@ function TeacherReviewMode({ testId, testTitle, onClose }) {
 
       {loadingDetails ? (
         <div className="trm-loading">Loading evaluation details...</div>
-      ) : !detailedResults || !detailedResults.results_available ? (
+      ) : !detailedResults ? (
+        <div className="trm-empty">Failed to load evaluation results.</div>
+      ) : detailedResults.retained_only ? (
+        <div className="trm-retained-summary" data-testid="trm-retained-summary">
+          <div className="trm-retained-card">
+            <div className="trm-retained-header">Detailed Results Expired</div>
+            <p className="trm-retained-note">
+              Detailed per-question evaluation has been archived per the 2-month retention policy.
+              The following summary is retained for annual/half-yearly feedback.
+            </p>
+            <div className="trm-retained-stats">
+              <div className="trm-retained-stat">
+                <span className="trm-retained-label">Score</span>
+                <span className="trm-retained-value" style={{ color: getScoreColor(detailedResults.percentage || 0) }}>
+                  {detailedResults.total_score}/{detailedResults.max_score} ({detailedResults.percentage?.toFixed(1)}%)
+                </span>
+              </div>
+              {detailedResults.improvement_summary && (
+                <div className="trm-retained-stat">
+                  <span className="trm-retained-label">Areas for Improvement</span>
+                  <span className="trm-retained-value trm-retained-improve">{detailedResults.improvement_summary}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : !detailedResults.results_available ? (
         <div className="trm-empty">Detailed evaluation results are not available (may have expired).</div>
       ) : (
         <>

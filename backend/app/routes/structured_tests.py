@@ -433,8 +433,8 @@ async def submit_test(
         submission.evaluation_status = "completed"
         submission.evaluated_at = datetime.now(timezone.utc)
         
-        # Save detailed per-question results (TTL: 1 month)
-        expires_at = datetime.now(timezone.utc) + timedelta(days=30)
+        # Save detailed per-question results (TTL: 2 months)
+        expires_at = datetime.now(timezone.utc) + timedelta(days=60)
         
         for qr in evaluation.get("question_results", []):
             er = EvaluationResult(
@@ -535,7 +535,8 @@ async def get_evaluation_results(
         "teacher_reviewed": submission.teacher_reviewed,
         "evaluation_status": submission.evaluation_status,
         "detailed_results": results_list,
-        "results_available": len(results_list) > 0
+        "results_available": len(results_list) > 0,
+        "retained_only": len(results_list) == 0 and submission.evaluation_status == "completed"
     }
 
 
@@ -649,24 +650,87 @@ async def teacher_review(
 
 
 # ============================================================================
-# CLEANUP: Delete expired evaluation details
+# CLEANUP: Delete expired evaluation details (retain summary)
 # ============================================================================
+
+async def _condense_and_cleanup(db):
+    """
+    Core retention logic:
+    1. Find submissions whose EvaluationResults have expired
+    2. Condense per-question feedback into a brief 1-2 sentence improvement summary
+    3. Store summary in submission.improvement_summary (preserved permanently)
+    4. Delete expired EvaluationResult rows
+    5. Clear raw answers_json from old submissions (no longer needed)
+    Returns count of deleted records.
+    """
+    # Find expired evaluation results grouped by submission
+    expired = await db.execute(
+        select(EvaluationResult)
+        .where(EvaluationResult.expires_at < datetime.now(timezone.utc))
+        .order_by(EvaluationResult.submission_id, EvaluationResult.question_number)
+    )
+    expired_results = expired.scalars().all()
+    if not expired_results:
+        return 0
+
+    # Group by submission_id
+    sub_groups = {}
+    for er in expired_results:
+        sub_groups.setdefault(er.submission_id, []).append(er)
+
+    # For each submission, condense feedback into brief summary
+    for sub_id, results in sub_groups.items():
+        sub_result = await db.execute(
+            select(StructuredTestSubmission).where(StructuredTestSubmission.id == sub_id)
+        )
+        submission = sub_result.scalars().first()
+        if not submission:
+            continue
+
+        # Build brief improvement summary from per-question feedback
+        improvements = []
+        for er in results:
+            fb = er.feedback_json or {}
+            suggestion = fb.get("improvement_suggestions", "")
+            if suggestion and len(suggestion.strip()) > 5:
+                improvements.append(suggestion.strip())
+
+        if improvements:
+            # Condense to 1-2 sentences max
+            brief = ". ".join(improvements[:3])
+            if len(brief) > 250:
+                brief = brief[:247] + "..."
+            # Only update if not already teacher-reviewed with a custom summary
+            if not submission.improvement_summary or len(submission.improvement_summary) < 10:
+                submission.improvement_summary = brief
+            else:
+                # Append condensed detail if existing summary is short
+                existing = submission.improvement_summary.strip()
+                if len(existing) < 200:
+                    submission.improvement_summary = f"{existing} | {brief}"[:300]
+
+        # Clear raw answers (no longer needed after detailed results expire)
+        submission.answers_json = None
+
+    # Delete all expired evaluation results
+    delete_result = await db.execute(
+        delete(EvaluationResult).where(EvaluationResult.expires_at < datetime.now(timezone.utc))
+    )
+    await db.commit()
+    return delete_result.rowcount
+
 
 @router.delete("/cleanup/expired")
 async def cleanup_expired_evaluations(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user)
 ):
-    """Delete evaluation details older than 1 month. Scores are preserved."""
+    """Manual trigger: Delete expired evaluation details, retain summaries."""
     if user.role != 'admin':
         raise HTTPException(status_code=403, detail="Admin only")
-    
-    result = await db.execute(
-        delete(EvaluationResult).where(EvaluationResult.expires_at < datetime.now(timezone.utc))
-    )
-    await db.commit()
-    
-    return {"message": f"Cleaned up expired evaluation records", "deleted": result.rowcount}
+
+    deleted = await _condense_and_cleanup(db)
+    return {"message": "Retention policy applied", "deleted": deleted}
 
 
 
