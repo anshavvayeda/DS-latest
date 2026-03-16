@@ -2107,15 +2107,6 @@ function StudentView({ user, language, isTeacherPreview = false }) {
     );
   }
 
-  // Performance Dashboard (accessible from subject selection page)
-  if (showPerformanceDashboard) {
-    return (
-      <div className="student-view">
-        <StudentPerformanceDashboard onClose={() => setShowPerformanceDashboard(false)} />
-      </div>
-    );
-  }
-
   // Step 2: Subject Selection (standard auto-fetched from profile)
   if (!selectedSubject) {
     // Helper function to get progress color class
@@ -2181,30 +2172,6 @@ function StudentView({ user, language, isTeacherPreview = false }) {
           </div>
         )}
         
-        {/* Performance Dashboard Button */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
-          <button
-            onClick={() => setShowPerformanceDashboard(true)}
-            data-testid="performance-dashboard-btn"
-            style={{
-              background: 'linear-gradient(135deg, #667eea, #764ba2)',
-              color: 'white',
-              border: 'none',
-              padding: '10px 22px',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'opacity 0.2s',
-            }}
-          >
-            <span style={{ fontSize: '16px' }}>&#9733;</span> My Performance
-          </button>
-        </div>
-
         <div className="subjects-grid">
           {subjects.map((subject, index) => {
             const colorClass = getSubjectColorClass(subject.name);
@@ -2421,8 +2388,36 @@ function StudentView({ user, language, isTeacherPreview = false }) {
         
         {/* Tests Section */}
         <div className="tests-section" style={{ marginTop: '30px' }}>
-          <h3 className="section-header">🧪 {t('Tests')}</h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <h3 className="section-header" style={{ margin: 0 }}>
+              {showPerformanceDashboard ? '' : t('Tests')}
+            </h3>
+            <button
+              onClick={() => setShowPerformanceDashboard(!showPerformanceDashboard)}
+              data-testid="performance-dashboard-btn"
+              style={{
+                background: showPerformanceDashboard ? '#334155' : 'linear-gradient(135deg, #667eea, #764ba2)',
+                color: 'white',
+                border: 'none',
+                padding: '8px 18px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: 700,
+              }}
+            >
+              {showPerformanceDashboard ? 'Back to Tests' : 'My Performance'}
+            </button>
+          </div>
           
+          {showPerformanceDashboard ? (
+            <StudentPerformanceDashboard
+              subjectId={selectedSubject.id}
+              subjectName={selectedSubject.name}
+              onClose={() => setShowPerformanceDashboard(false)}
+            />
+          ) : (
+          <>
           {/* AI-Evaluated Tests */}
           {aiTestList.length > 0 && (
             <div style={{ marginBottom: '20px' }}>
@@ -2552,6 +2547,8 @@ function StudentView({ user, language, isTeacherPreview = false }) {
             <div className="info-box">
               <p style={{ margin: 0 }}>No tests scheduled yet.</p>
             </div>
+          )}
+          </>
           )}
         </div>
       </div>

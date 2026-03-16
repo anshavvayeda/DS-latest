@@ -17,7 +17,7 @@ const TYPE_LABELS = {
   numerical: 'Numerical',
 };
 
-export default function StudentPerformanceDashboard({ onClose }) {
+export default function StudentPerformanceDashboard({ subjectId, subjectName, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -25,7 +25,10 @@ export default function StudentPerformanceDashboard({ onClose }) {
   useEffect(() => {
     const fetchPerformance = async () => {
       try {
-        const res = await axios.get(`${API}/structured-tests/student/performance`, { withCredentials: true });
+        const url = subjectId
+          ? `${API}/structured-tests/student/performance?subject_id=${subjectId}`
+          : `${API}/structured-tests/student/performance`;
+        const res = await axios.get(url, { withCredentials: true });
         setData(res.data);
       } catch (err) {
         setError(err.response?.data?.detail || 'Failed to load performance data');
@@ -34,7 +37,7 @@ export default function StudentPerformanceDashboard({ onClose }) {
       }
     };
     fetchPerformance();
-  }, []);
+  }, [subjectId]);
 
   if (loading) {
     return (
@@ -49,7 +52,7 @@ export default function StudentPerformanceDashboard({ onClose }) {
       <div className="spd-container" data-testid="spd-error">
         <div className="spd-header">
           <button className="spd-back" onClick={onClose} data-testid="spd-back">Back</button>
-          <h2>Performance Dashboard</h2>
+          <h2>{subjectName ? `${subjectName} — Performance` : 'Performance Dashboard'}</h2>
         </div>
         <div className="spd-error">{error}</div>
       </div>
@@ -61,7 +64,7 @@ export default function StudentPerformanceDashboard({ onClose }) {
       <div className="spd-container" data-testid="spd-empty">
         <div className="spd-header">
           <button className="spd-back" onClick={onClose} data-testid="spd-back">Back</button>
-          <h2>Performance Dashboard</h2>
+          <h2>{subjectName ? `${subjectName} — Performance` : 'Performance Dashboard'}</h2>
         </div>
         <div className="spd-empty-state">
           <div className="spd-empty-icon">&#9472;</div>
@@ -80,12 +83,6 @@ export default function StudentPerformanceDashboard({ onClose }) {
 
   return (
     <div className="spd-container" data-testid="spd-dashboard">
-      {/* Header */}
-      <div className="spd-header">
-        <button className="spd-back" onClick={onClose} data-testid="spd-back">Back</button>
-        <h2>Performance Dashboard</h2>
-      </div>
-
       {/* Summary Cards */}
       <div className="spd-summary" data-testid="spd-summary">
         <div className="spd-stat-card">
@@ -165,8 +162,8 @@ export default function StudentPerformanceDashboard({ onClose }) {
         </div>
       )}
 
-      {/* Subject Breakdown */}
-      {data.subject_breakdown.length > 0 && (
+      {/* Subject Breakdown - only show when NOT filtered by subject */}
+      {!subjectId && data.subject_breakdown.length > 0 && (
         <div className="spd-section" data-testid="spd-subjects">
           <h3>Subject-wise Performance</h3>
           <div className="spd-subject-cards">

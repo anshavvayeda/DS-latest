@@ -665,23 +665,31 @@ async def cleanup_expired_evaluations(
 
 @router.get("/student/performance")
 async def get_student_performance(
+    subject_id: str = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user)
 ):
-    """Get performance dashboard data for the current student."""
-    if user.role != 'student':
+    """Get performance dashboard data for the current student, optionally filtered by subject."""
+    if user.role not in ('student', 'admin'):
         raise HTTPException(status_code=403, detail="Students only")
     
     # Get all completed submissions for this student
-    subs_result = await db.execute(
+    subs_query = (
         select(StructuredTestSubmission)
         .where(
             StructuredTestSubmission.student_id == user.id,
             StructuredTestSubmission.submitted == True,
             StructuredTestSubmission.evaluation_status == 'completed'
         )
-        .order_by(StructuredTestSubmission.submitted_at.asc())
     )
+    # If subject_id is provided, filter by joining with StructuredTest
+    if subject_id:
+        subs_query = subs_query.join(
+            StructuredTest, StructuredTestSubmission.test_id == StructuredTest.id
+        ).where(StructuredTest.subject_id == subject_id)
+    
+    subs_query = subs_query.order_by(StructuredTestSubmission.submitted_at.asc())
+    subs_result = await db.execute(subs_query)
     submissions = subs_result.scalars().all()
     
     if not submissions:
