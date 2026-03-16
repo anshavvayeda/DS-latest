@@ -183,7 +183,7 @@ function ToolContentDisplay({ learningTool, toolContent, selectedSubject, select
     };
     return (
       <div className="flashcards-container" data-testid="flashcards">
-        <div className="flashcards-header"><h2>🃏 Flashcards</h2><p className="chapter-badge">{selectedChapter?.name}</p></div>
+        <div className="flashcards-header"><h2>Flashcards</h2><p className="chapter-badge">{selectedChapter?.name}</p></div>
         <div className="flashcards-stats">
           <div className="stat-item easy"><span className="stat-emoji">😊</span><span className="stat-count">{Object.values(fcRatings).filter(r => r === 'easy').length}</span></div>
           <div className="stat-item medium"><span className="stat-emoji">🤔</span><span className="stat-count">{Object.values(fcRatings).filter(r => r === 'medium').length}</span></div>

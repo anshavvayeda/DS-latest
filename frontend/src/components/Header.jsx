@@ -38,7 +38,7 @@ function Header({ user, view, setView, onLogout, language, onLanguageToggle, stu
           title="Multi-language support coming soon!"
           style={{ position: 'relative', cursor: 'not-allowed', opacity: 0.7 }}
         >
-          🌐 English
+          🌐 ગુજરાતી
           <span className="new-badge">NEW</span>
         </button>
         

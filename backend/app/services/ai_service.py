@@ -607,13 +607,16 @@ Chapter: {chapter}
 TEXTBOOK CONTENT:
 {content_trimmed}
 
+CRITICAL RULE: Every "back" answer MUST be exactly 1 or 2 words only. No sentences.
+Example: front: "What is the process by which plants make food?" → back: "Photosynthesis"
+
 You MUST return ONLY this exact JSON structure:
 {{
   "flashcards": [
     {{
       "id": 1,
-      "front": "Question",
-      "back": "Answer",
+      "front": "Question where the answer is 1-2 words",
+      "back": "OneOrTwoWords",
       "hint": "Memory trick",
       "category": "definition/formula/fact/concept",
       "exam_likelihood": "high/medium/low"
@@ -1215,34 +1218,37 @@ async def generate_flashcards(subject: str, chapter: str, content: str, language
 {content_to_use}
 
 **YOUR TASK:**
-Create exactly {count} flashcards that focus on EXAM-IMPORTANT content:
-1. Definitions that are commonly asked
-2. Facts, dates, numbers that students need to memorize
-3. Formulas and their applications
-4. Key concepts that appear frequently in exams
-5. Common MCQ-style questions
+Create exactly {count} flashcards. CRITICAL RULE: Every answer on the back MUST be exactly 1 or 2 words. No sentences, no explanations — just the exact keyword(s).
+
+**Question types to use (all must have 1-2 word answers):**
+1. "What is the term for...?" → Answer: "Photosynthesis"
+2. "Name the..." → Answer: "Carbon dioxide"
+3. "Who discovered...?" → Answer: "Isaac Newton"
+4. "What is the formula for...?" → Answer: "A = lr2"
+5. "Fill in the blank: The capital of India is ___" → Answer: "New Delhi"
+6. "What year did...?" → Answer: "1947"
 
 **PRIORITY ORDER:**
-1. Direct exam questions (definitions, fill-blanks, one-word answers)
-2. Important facts/numbers that need memorization
-3. Concept understanding questions
-4. Application-based questions
+1. One-word definitions and key terms
+2. Important names, dates, numbers
+3. Formulas (keep answer to the formula only)
+4. Fill-in-the-blank style
 
 Return ONLY a JSON array:
 [
   {{
     "id": 1,
-    "front": "Question phrased appropriately for Class {standard}",
-    "back": "Clear, complete answer",
-    "hint": "Memory trick or clue",
+    "front": "Question designed so the answer is 1-2 words",
+    "back": "OneOrTwoWords",
+    "hint": "Memory trick or first letter clue",
     "category": "definition/formula/fact/concept/mcq",
     "exam_likelihood": "high/medium/low",
     "marks_type": "1-mark/2-mark/long-answer"
   }}
 ]
 
-Make questions progressively harder. First 5 should be basic recall, next 5 understanding, last 5 application.
-Use language appropriate for {age_context['age_group']}."""
+REMEMBER: The "back" field must NEVER be a sentence. It must be exactly 1 or 2 words (or a short formula). This is critical.
+Make questions progressively harder. Use language appropriate for {age_context['age_group']}."""
     
     system_message = f"You are an expert {subject} teacher who creates effective flashcards that help Class {standard} students prepare for exams. You know exactly what questions appear in exams."
     
