@@ -867,6 +867,7 @@ class StructuredHomeworkQuestion(Base):
     objective_data = Column(JSON, nullable=True)
     evaluation_points = Column(JSON, nullable=True)
     solution_steps = Column(JSON, nullable=True)
+    hint_text = Column(Text, nullable=True)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 

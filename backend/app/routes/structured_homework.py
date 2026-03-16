@@ -1,5 +1,5 @@
-"""Structured Homework routes: create, publish, solve with AI hints."""
-from fastapi import APIRouter, Depends, HTTPException
+"""Structured Homework routes: create, publish, solve with pre-generated AI hints."""
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, delete, and_, desc
 from datetime import datetime, timezone
@@ -26,8 +26,13 @@ OBJECTIVE_TYPES = ['mcq', 'true_false', 'fill_blank', 'one_word', 'match_followi
 # ===== TEACHER: Create & Publish =====
 
 @router.post("")
-async def create_homework(data: dict, db: AsyncSession = Depends(get_db), user: User = Depends(require_teacher)):
-    """Create homework with questions in one shot (Save & Publish)."""
+async def create_homework(
+    data: dict,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_teacher),
+):
+    """Create homework with questions in one shot. Hints are generated in background."""
     school_name = await get_user_school(user, db)
 
     questions_data = data.get("questions", [])
@@ -47,6 +52,7 @@ async def create_homework(data: dict, db: AsyncSession = Depends(get_db), user: 
     db.add(hw)
     await db.flush()
 
+    question_ids = []
     for q in questions_data:
         qn = StructuredHomeworkQuestion(
             homework_id=hw.id,
@@ -59,9 +65,15 @@ async def create_homework(data: dict, db: AsyncSession = Depends(get_db), user: 
             solution_steps=q.get("solution_steps"),
         )
         db.add(qn)
+        await db.flush()
+        question_ids.append(qn.id)
 
     await db.commit()
     logger.info(f"Homework '{hw.title}' created with {hw.question_count} questions by {user.id}")
+
+    # Generate hints in background — no LLM calls when students request hints
+    background_tasks.add_task(_generate_all_hints, hw.id)
+
     return {"id": hw.id, "title": hw.title, "question_count": hw.question_count, "status": "active"}
 
 
@@ -174,7 +186,6 @@ async def start_homework(homework_id: str, db: AsyncSession = Depends(get_db), u
     if not hw:
         raise HTTPException(status_code=404, detail="Homework not found")
 
-    # Check if already submitted (order by created_at desc, limit 1 to get latest)
     sub_result = await db.execute(
         select(StructuredHomeworkSubmission).where(
             and_(
@@ -188,7 +199,6 @@ async def start_homework(homework_id: str, db: AsyncSession = Depends(get_db), u
         raise HTTPException(status_code=400, detail="Homework already completed")
 
     if not sub:
-        # Get roll_no
         profile_result = await db.execute(select(StudentProfile).where(StudentProfile.user_id == user.id))
         profile = profile_result.scalar_one_or_none()
         roll_no = profile.roll_no if profile else "unknown"
@@ -237,11 +247,11 @@ async def save_progress(homework_id: str, data: dict, db: AsyncSession = Depends
 
 @router.post("/{homework_id}/hint")
 async def get_hint(homework_id: str, data: dict, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
-    """Get AI hint for a specific question. First call: hint. Second call: reveal answer."""
+    """Get pre-generated hint for a question. First call: hint. Second call: reveal answer.
+    NO LLM calls here — hints are pre-generated at publish time."""
     question_number = data.get("question_number")
-    student_answer = data.get("student_answer", "")
 
-    # Get the question
+    # Get the question (with pre-generated hint)
     q_result = await db.execute(
         select(StructuredHomeworkQuestion).where(
             and_(
@@ -254,7 +264,7 @@ async def get_hint(homework_id: str, data: dict, db: AsyncSession = Depends(get_
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
 
-    # Get submission to check hint history (order by created_at desc to get latest)
+    # Get submission to check hint history
     sub_result = await db.execute(
         select(StructuredHomeworkSubmission).where(
             and_(
@@ -271,11 +281,9 @@ async def get_hint(homework_id: str, data: dict, db: AsyncSession = Depends(get_
     q_key = str(question_number)
     q_hints = hints.get(q_key, {"hint_used": False, "answer_revealed": False})
 
-    # Determine correct answer
     correct_answer = _get_correct_answer(question)
 
     if q_hints.get("answer_revealed"):
-        # Already revealed — return the answer again
         return {"type": "answer", "content": correct_answer}
 
     if q_hints.get("hint_used"):
@@ -286,8 +294,8 @@ async def get_hint(homework_id: str, data: dict, db: AsyncSession = Depends(get_
         await db.commit()
         return {"type": "answer", "content": correct_answer}
 
-    # First request → generate AI hint
-    hint_text = await _generate_hint(question, student_answer)
+    # First request → serve pre-generated hint from DB (no LLM call)
+    hint_text = question.hint_text or _fallback_hint(question)
     q_hints["hint_used"] = True
     hints[q_key] = q_hints
     sub.hints_json = hints
@@ -372,7 +380,6 @@ async def cleanup_expired_homework():
         cleaned = 0
         for hw in expired:
             hw.status = 'expired'
-            # Clear detailed data from submissions but keep completed flag
             sub_result = await db.execute(
                 select(StructuredHomeworkSubmission).where(
                     StructuredHomeworkSubmission.homework_id == hw.id
@@ -382,12 +389,84 @@ async def cleanup_expired_homework():
                 sub.answers_json = None
                 sub.hints_json = None
                 cleaned += 1
-            # Delete questions
             await db.execute(delete(StructuredHomeworkQuestion).where(
                 StructuredHomeworkQuestion.homework_id == hw.id
             ))
         await db.commit()
         return cleaned
+
+
+# ===== BACKGROUND: Pre-generate hints at publish time =====
+
+async def _generate_all_hints(homework_id: str):
+    """Background task: generate hints for ALL questions in a homework.
+    Called once at publish time. Students get hints from DB — zero LLM calls."""
+    async with AsyncSessionLocal() as db:
+        try:
+            q_result = await db.execute(
+                select(StructuredHomeworkQuestion)
+                .where(StructuredHomeworkQuestion.homework_id == homework_id)
+                .order_by(StructuredHomeworkQuestion.question_number)
+            )
+            questions = q_result.scalars().all()
+
+            for question in questions:
+                try:
+                    hint = await _generate_hint_for_question(question)
+                    question.hint_text = hint
+                    logger.info(f"Hint generated for Q{question.question_number} of homework {homework_id}")
+                except Exception as e:
+                    logger.error(f"Hint generation failed for Q{question.question_number}: {e}")
+                    question.hint_text = _fallback_hint(question)
+
+            await db.commit()
+            logger.info(f"All hints generated for homework {homework_id} ({len(questions)} questions)")
+        except Exception as e:
+            logger.error(f"Background hint generation failed for homework {homework_id}: {e}")
+
+
+async def _generate_hint_for_question(question) -> str:
+    """Generate a logical, thought-provoking hint for a single question."""
+    correct = _get_correct_answer(question)
+
+    prompt = f"""You are an expert tutor creating a HINT for a homework question. The hint will be shown to students who are stuck.
+
+QUESTION: {question.question_text}
+QUESTION TYPE: {question.question_type}
+CORRECT ANSWER: {correct}
+
+Your hint MUST:
+1. Be specific to THIS question — reference the actual content, concepts, or data in the question
+2. Guide the student's thinking with a logical nudge — point them toward the reasoning path that leads to the answer
+3. NEVER reveal the answer, the answer's first letter, or directly state the correct option
+4. Be 1-3 sentences maximum
+
+Guidelines by question type:
+- MCQ: Explain why 2-3 wrong options can be eliminated using specific reasoning. E.g. "Option B refers to X which only applies when Y, but the question asks about Z..."
+- True/False: Point out the specific claim in the statement that the student should verify. E.g. "Check whether the date mentioned is actually when that event occurred..."
+- Fill in the blank / One word: Give a definitional clue or context clue. E.g. "This term describes the process where heat converts liquid to gas..."
+- Match the following: Identify one tricky pair and explain the connection. E.g. "Remember that Newton's 3rd law specifically deals with action-reaction pairs..."
+- Short/Long answer: Break down what the question is really asking and identify the key concept. E.g. "This question is asking you to compare X and Y — focus on their differences in mechanism..."
+- Numerical: Identify the formula or first step. E.g. "Start by identifying the given values: mass=5kg, acceleration=?. Which formula connects force, mass and acceleration?"
+
+Respond with ONLY the hint text. No labels, no prefixes."""
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        response = await client.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "google/gemini-2.5-flash",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 200,
+                "temperature": 0.4,
+            },
+        )
+        data = response.json()
+        return data["choices"][0]["message"]["content"].strip()
 
 
 # ===== HELPERS =====
@@ -401,63 +480,32 @@ def _get_correct_answer(question):
             options = obj.get("options", {})
             return f"{correct_key.upper()}) {options.get(correct_key, '')}"
         elif question.question_type == 'true_false':
-            return "True" if obj.get("correct") else "False"
+            return "True" if obj.get("correct") == "true" else "False"
         elif question.question_type in ('fill_blank', 'one_word'):
             return obj.get("correct", "")
         elif question.question_type == 'match_following':
             pairs = obj.get("pairs", [])
-            return "\n".join([f"{p['left']} → {p['right']}" for p in pairs])
-    # Subjective — return model answer
+            return "\n".join([f"{p['left']} -> {p['right']}" for p in pairs])
     return question.model_answer or "No answer available"
 
 
-async def _generate_hint(question, student_answer: str) -> str:
-    """Generate an AI hint that guides without revealing the answer."""
+def _fallback_hint(question):
+    """Deterministic fallback hint when LLM hint is unavailable."""
     correct = _get_correct_answer(question)
+    qt = question.question_type
 
-    prompt = f"""You are a helpful tutor giving a HINT to a student struggling with a homework question.
-
-QUESTION: {question.question_text}
-CORRECT ANSWER: {correct}
-STUDENT'S ATTEMPT: {student_answer or "(no attempt yet)"}
-
-RULES:
-- Give exactly ONE hint that nudges the student toward the right answer
-- Do NOT reveal the answer directly
-- Keep it to 1-2 sentences max
-- Be encouraging and supportive
-- For MCQ: hint at the reasoning, not the letter
-- For fill-in-blank: give a contextual clue
-- For numerical: hint at the formula or first step
-- For subjective: point toward the key concept they're missing
-
-Respond with ONLY the hint text, nothing else."""
-
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": "google/gemini-flash-1.5",
-                    "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 150,
-                    "temperature": 0.7,
-                },
-            )
-            data = response.json()
-            return data["choices"][0]["message"]["content"].strip()
-    except Exception as e:
-        logger.error(f"Hint generation failed: {e}")
-        # Fallback: generic hint based on question type
-        if question.question_type == 'mcq':
-            return "Try eliminating the options you know are incorrect. Think about the key concept in the question."
-        elif question.question_type in ('fill_blank', 'one_word'):
-            return f"Think about the main topic of this question. The answer starts with '{correct[0]}...'."
-        elif question.question_type == 'true_false':
-            return "Read the statement carefully. Think about whether every part of it is accurate."
-        else:
-            return "Review your notes on this topic. Focus on the key concept the question is asking about."
+    if qt == 'mcq':
+        return "Read each option carefully and think about which one directly answers what the question is asking. Try to eliminate options that seem too broad or too specific for the context."
+    elif qt == 'true_false':
+        return "Break the statement into individual claims and verify each one. A statement is only True if every part of it is accurate."
+    elif qt == 'fill_blank':
+        return f"Think about the key concept this sentence is describing. The missing word is closely related to the main topic of the sentence."
+    elif qt == 'one_word':
+        return "Focus on the definition or description in the question. The answer is a specific term that fits this description exactly."
+    elif qt == 'match_following':
+        return "Start with the pairs you're most confident about and match those first. Then use elimination for the remaining items."
+    elif qt == 'numerical':
+        return "Identify all the given values and what you need to find. Write down the relevant formula, then substitute the values step by step."
+    elif qt in ('short_answer', 'long_answer'):
+        return "Identify the key concept the question is asking about. Structure your answer by first stating the main idea, then supporting it with specific details or examples."
+    return "Think about the core concept this question tests. Review the key terms and their definitions."
