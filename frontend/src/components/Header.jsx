@@ -30,14 +30,16 @@ function Header({ user, view, setView, onLogout, language, onLanguageToggle, stu
         />
       </div>
       <div className="header-right">
-        {/* Language Toggle Button */}
+        {/* Language Toggle Button - Coming Soon */}
         <button 
-          onClick={onLanguageToggle} 
-          className="language-toggle-btn" 
+          disabled
+          className="language-toggle-btn language-toggle-disabled" 
           data-testid="language-toggle"
-          title={language === 'english' ? 'Switch to Gujarati' : 'Switch to English'}
+          title="Multi-language support coming soon!"
+          style={{ position: 'relative', cursor: 'not-allowed', opacity: 0.7 }}
         >
-          {language === 'english' ? '🇮🇳 ગુજરાતી' : '🇬🇧 English'}
+          🌐 English
+          <span className="new-badge">NEW</span>
         </button>
         
         {user.role === 'teacher' && (
