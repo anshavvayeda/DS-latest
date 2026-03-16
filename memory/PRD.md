@@ -53,6 +53,15 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - Recent tests timeline with grade badges
 - Score trend chart (bar + line overlay, appears with 2+ tests)
 
+### Data Retention Policy (Complete - Mar 16, 2026)
+- EvaluationResult TTL: 2 months (changed from 1 month)
+- Background cron job runs every 6 hours to clean up expired detailed evaluation records
+- Before deletion: condenses per-question improvement suggestions into brief 1-2 sentence summary
+- Retained permanently: total_score, max_score, percentage, class_rank, improvement_summary
+- Deleted after 2 months: detailed EvaluationResult rows, raw answers_json
+- Manual admin cleanup: DELETE /api/structured-tests/cleanup/expired
+- Frontend gracefully shows "archived per 2-month retention policy" when details expire
+
 ### Student Greeting (Complete - Mar 16, 2026)
 - Added cursive greeting "Hi <name>, Which subject do you want to study today?" using Dancing Script font with gradient colors
 - Appears above the subjects grid only for students (not in teacher preview mode)
