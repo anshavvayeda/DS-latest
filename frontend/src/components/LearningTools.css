@@ -1126,7 +1126,7 @@
 }
 
 .section-header:hover {
-  background: #F7FAFC;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .section-header.expanded {
