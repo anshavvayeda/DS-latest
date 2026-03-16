@@ -17,6 +17,9 @@ const AdminLogin = ({ onLoginSuccess }) => {
 
     // CRITICAL: Clear old token first to prevent conflicts
     localStorage.removeItem('auth_token');
+    try {
+      await axios.post(`${API}/auth/logout`, {}, { withCredentials: true });
+    } catch (_) { /* ignore — just clearing stale cookie */ }
 
     try {
       const response = await axios.post(`${API}/admin/login`, {

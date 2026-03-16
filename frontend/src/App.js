@@ -816,20 +816,22 @@ function App() {
   };
 
   const handleLogout = async () => {
+    // CRITICAL: Clear localStorage token FIRST to prevent interceptor sending stale token
+    localStorage.removeItem('auth_token');
+
     try {
       await axios.post(`${API}/auth/logout`, {}, { withCredentials: true });
     } catch (err) {
       console.error('Logout error:', err);
     }
-    
-    // CRITICAL: Clear localStorage token
-    localStorage.removeItem('auth_token');
-    
+
     // Clear all state
     setUser(null);
     setShowProfileForm(false);
     setShowAdminLogin(false);
     setView('student');
+    setShowParentDashboard(false);
+    setShowTeacherAnalytics(false);
   };
 
   const handleLanguageToggle = () => {
@@ -1014,8 +1016,11 @@ function AuthScreen({ onSuccess, onAdminLogin }) {
     setLoading(true);
     setError('');
     
-    // CRITICAL: Clear old token first to prevent conflicts
+    // CRITICAL: Clear old token AND stale cookie before new login
     localStorage.removeItem('auth_token');
+    try {
+      await axios.post(`${API}/auth/logout`, {}, { withCredentials: true });
+    } catch (_) { /* ignore — just clearing stale cookie */ }
     
     try {
       const response = await axios.post(

@@ -480,17 +480,19 @@ async def get_current_user(
 ) -> User:
     """
     Get current user from either:
-    1. Cookie (auth_token) - preferred for browser
-    2. Authorization header (Bearer token) - fallback for CORS/HTTP issues
+    1. Authorization header (Bearer token) - preferred, always fresh
+    2. Cookie (auth_token) - fallback for browser requests
     """
-    # Try cookie first
-    auth_token = token
-    
-    # If no cookie, try Authorization header
-    if not auth_token and authorization:
-        if authorization.startswith("Bearer "):
-            auth_token = authorization.replace("Bearer ", "")
-    
+    auth_token = None
+
+    # Prefer Authorization header (always carries the latest token)
+    if authorization and authorization.startswith("Bearer "):
+        auth_token = authorization.replace("Bearer ", "")
+
+    # Fall back to cookie
+    if not auth_token and token:
+        auth_token = token
+
     if not auth_token:
         raise HTTPException(status_code=401, detail="Not authenticated")
     
@@ -787,7 +789,13 @@ async def get_me(user: User = Depends(get_current_user), db: AsyncSession = Depe
 
 @api_router.post("/auth/logout")
 async def logout(response: Response):
-    response.delete_cookie("auth_token")
+    response.delete_cookie(
+        "auth_token",
+        path="/",
+        httponly=True,
+        samesite="None",
+        secure=True
+    )
     return {"message": "Logged out successfully"}
 
 # =============================================================================
