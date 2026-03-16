@@ -53,6 +53,12 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - Recent tests timeline with grade badges
 - Score trend chart (bar + line overlay, appears with 2+ tests)
 
+### Parent Dashboard AI Sync (Complete - Mar 16, 2026)
+- Backend endpoint `/api/student/parent-dashboard` updated to query StructuredTestSubmission + StructuredTest
+- AI-evaluated test scores now appear in subject-wise performance cards with graphs
+- Overall stats (tests taken, avg score) include combined data from old and AI test systems
+- Subject classification (strong/average/weak) based on all test data
+
 ### Other Completed Work
 - Branding/UI overhaul, bug fixes, CI/CD pipeline, documentation
 
@@ -60,9 +66,9 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - **P0**: Login bug - After admin logout, teacher/student login fails (recurring 2x)
 - **P1**: Admin dashboard empty on EC2 (user verification pending)
 
-## Recently Fixed Bugs (Mar 15, 2026)
-- **Save Draft was not saving questions before Publish**: `handlePublish` now always calls `handleSave()` first, ensuring all questions are saved before publishing
-- **Confusing Save Draft message**: Now clearly says "Draft saved! Test is NOT yet visible to students."
+## Recently Fixed Bugs (Mar 16, 2026)
+- **Parent Dashboard not showing AI test scores/graphs**: Updated `/api/student/parent-dashboard` to query StructuredTestSubmission joined with StructuredTest and merge AI test data into subject performance
+- **Save Draft was not saving questions before Publish**: `handlePublish` now always calls `handleSave()` first
 - **Parallel data fetching**: Replaced sequential awaits with `Promise.allSettled` to prevent UI hang
 
 ## Prioritized Backlog
