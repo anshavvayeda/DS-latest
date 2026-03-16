@@ -521,7 +521,8 @@ function StudentContentViewer({ chapter, subject, onBack }) {
           onClick={() => handleTabChange('flashcards')}
           data-testid="tab-flashcards"
         >
-          🃏 Flashcards
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:'inline',verticalAlign:'middle',marginRight:'4px'}}><rect x="6" y="2" width="14" height="18" rx="2"/><rect x="4" y="4" width="14" height="18" rx="2" opacity="0.5"/></svg>
+          Flashcards
         </button>
         <button
           className={`tab-btn ${activeTab === 'quiz' ? 'active' : ''}`}

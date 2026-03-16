@@ -133,7 +133,11 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - Frontend: `StructuredHomeworkCreator.jsx` (teacher), `StudentAIHomework.jsx` (student solver)
 - Question types: MCQ, true/false, fill blank, one word, match following, short/long answer, numerical
 
-### AI Homework UI Polish (Complete - Mar 16, 2026)
+### Flashcard Improvements (Complete - Mar 17, 2026)
+- Updated flashcard generation prompts across all 3 generation functions (ai_orchestrator_v2, ai_service generate_flashcards, ai_service generate_flashcards_atomic) to strictly enforce 1-2 word answers only
+- Prompt now explicitly forbids definitions, descriptions, and long answers on the back side
+- Prompt prioritizes directly memorizable content: key terms, dates, names, formulas, values
+- Replaced flashcard icon with a playing cards SVG icon (both tool card and tab)
 - Rewrote `StructuredHomeworkCreator.jsx` to use identical CSS classes as `StructuredTestCreator.jsx`
 - Both components now share `StructuredTestCreator.css` with matching class structure
 - Key fixes: MCQ uses `stc-section-box` + `stc-inline`, True/False uses radio buttons (not dropdown), Match pairs use `stc-pair-row` + `stc-arrow`, Model answer wrapped in `stc-section-box`, Publish button in `stc-actions` wrapper

@@ -840,7 +840,7 @@ Return ONLY this JSON:
     {{
       "id": 1,
       "front": "Question or term",
-      "back": "Answer or definition",
+      "back": "1-2 word answer",
       "hint": "Memory trick or clue",
       "category": "definition/formula/fact/concept",
       "exam_likelihood": "high/medium"
@@ -848,10 +848,15 @@ Return ONLY this JSON:
   ]
 }}
 
-REQUIREMENTS:
+CRITICAL REQUIREMENTS:
 - EXACTLY 15 flashcards (numbered 1-15)
+- The "back" MUST be exactly 1-2 words. Examples: "Mitochondria", "Newton's Third", "252 km/h", "Chlorophyll", "1947"
+- NEVER use definitions, descriptions, explanations, or sentences as the back. Only directly memorizable 1-2 word answers
+- Pick ONLY content from the textbook that has a clear, specific, short factual answer: names, dates, formulas, terms, values, places, units
+- The "front" should be a direct question or fill-in-the-blank that tests recall of that specific fact
+- Good example: front="Powerhouse of the cell?" back="Mitochondria"
+- Bad example: front="What is mitochondria?" back="An organelle that produces energy for the cell" (TOO LONG)
 - Focus on exam-important content
-- Include definitions, formulas, key facts
 - Use {age['language']}
 - Mix of difficulty levels"""
 
