@@ -11,7 +11,7 @@ const CLASSIFICATION_COLORS = {
   no_data: { bg: '#374151', border: '#6b7280', text: '#9ca3af', label: 'No Data' }
 };
 
-// Smooth curve line chart component with dark theme
+// Simple bar chart using HTML/CSS (reliable rendering, no SVG quirks)
 const PerformanceChart = ({ data, subjectName }) => {
   if (!data || data.length === 0) {
     return (
@@ -21,189 +21,47 @@ const PerformanceChart = ({ data, subjectName }) => {
     );
   }
 
-  // Chart dimensions
-  const width = 320;
-  const height = 160;
-  const padding = { top: 20, right: 20, bottom: 40, left: 35 };
-  const chartWidth = width - padding.left - padding.right;
-  const chartHeight = height - padding.top - padding.bottom;
-
-  // Calculate points
-  const points = data.map((d, i) => {
-    const x = padding.left + (i / Math.max(data.length - 1, 1)) * chartWidth;
-    const y = padding.top + chartHeight - (d.percentage / 100) * chartHeight;
-    return { x, y, percentage: d.percentage, date: d.date, test_name: d.test_name };
-  });
-
-  // Generate smooth curve path using Catmull-Rom spline converted to cubic bezier
-  const generateSmoothPath = (pts) => {
-    if (pts.length === 0) return '';
-    if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
-    if (pts.length === 2) return `M ${pts[0].x} ${pts[0].y} L ${pts[1].x} ${pts[1].y}`;
-
-    let path = `M ${pts[0].x} ${pts[0].y}`;
-    
-    for (let i = 0; i < pts.length - 1; i++) {
-      const p0 = pts[Math.max(0, i - 1)];
-      const p1 = pts[i];
-      const p2 = pts[Math.min(pts.length - 1, i + 1)];
-      const p3 = pts[Math.min(pts.length - 1, i + 2)];
-
-      // Tension factor (0.5 for Catmull-Rom)
-      const tension = 0.5;
-      
-      // Calculate control points
-      const cp1x = p1.x + (p2.x - p0.x) * tension / 3;
-      const cp1y = p1.y + (p2.y - p0.y) * tension / 3;
-      const cp2x = p2.x - (p3.x - p1.x) * tension / 3;
-      const cp2y = p2.y - (p3.y - p1.y) * tension / 3;
-
-      path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
-    }
-    
-    return path;
-  };
-
-  const linePath = generateSmoothPath(points);
-
-  // Generate gradient fill path (area under curve)
-  const areaPath = linePath + 
-    ` L ${points[points.length - 1].x} ${padding.top + chartHeight}` +
-    ` L ${points[0].x} ${padding.top + chartHeight} Z`;
-
-  // Get color for a percentage value
-  const getPointColor = (percentage) => {
-    if (percentage >= 80) return '#10b981';
-    if (percentage >= 60) return '#f59e0b';
+  const getBarColor = (pct) => {
+    if (pct >= 80) return '#10b981';
+    if (pct >= 60) return '#f59e0b';
     return '#ef4444';
   };
 
   return (
     <div className="chart-section-dark">
-      <h5 className="chart-title-dark">📈 Test Score History</h5>
-      <div className="line-chart-container">
-        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-          {/* Gradient definition for area fill */}
-          <defs>
-            <linearGradient id={`areaGradient-${subjectName}`} x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="#60a5fa" stopOpacity="0.05" />
-            </linearGradient>
-          </defs>
-
-          {/* Y-axis labels (0% and 100% only) */}
-          <text 
-            x={padding.left - 8} 
-            y={padding.top + 4} 
-            textAnchor="end" 
-            className="chart-axis-label"
-          >
-            100%
-          </text>
-          <text 
-            x={padding.left - 8} 
-            y={padding.top + chartHeight + 4} 
-            textAnchor="end" 
-            className="chart-axis-label"
-          >
-            0%
-          </text>
-
-          {/* Y-axis line */}
-          <line 
-            x1={padding.left} 
-            y1={padding.top} 
-            x2={padding.left} 
-            y2={padding.top + chartHeight}
-            stroke="#374151"
-            strokeWidth="1"
-          />
-
-          {/* X-axis line */}
-          <line 
-            x1={padding.left} 
-            y1={padding.top + chartHeight} 
-            x2={padding.left + chartWidth} 
-            y2={padding.top + chartHeight}
-            stroke="#374151"
-            strokeWidth="1"
-          />
-
-          {/* Horizontal grid lines at 50% mark */}
-          <line 
-            x1={padding.left} 
-            y1={padding.top + chartHeight * 0.5} 
-            x2={padding.left + chartWidth} 
-            y2={padding.top + chartHeight * 0.5}
-            stroke="#374151"
-            strokeWidth="0.5"
-            strokeDasharray="4,4"
-            opacity="0.5"
-          />
-
-          {/* Area fill under the curve */}
-          <path 
-            d={areaPath} 
-            fill={`url(#areaGradient-${subjectName})`}
-          />
-
-          {/* Smooth curve line */}
-          <path 
-            d={linePath} 
-            fill="none" 
-            stroke="#60a5fa" 
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="line-chart-path"
-          />
-
-          {/* Data point markers */}
-          {points.map((point, i) => (
-            <g key={i}>
-              {/* Outer glow circle */}
-              <circle 
-                cx={point.x} 
-                cy={point.y} 
-                r="8"
-                fill={getPointColor(point.percentage)}
-                opacity="0.3"
-              />
-              {/* Inner marker circle */}
-              <circle 
-                cx={point.x} 
-                cy={point.y} 
-                r="5"
-                fill={getPointColor(point.percentage)}
-                stroke="#1a2332"
-                strokeWidth="2"
-                className="line-chart-marker"
-              />
-              {/* Percentage label above marker */}
-              <text 
-                x={point.x} 
-                y={point.y - 12} 
-                textAnchor="middle" 
-                className="chart-point-label"
-              >
-                {point.percentage}%
-              </text>
-            </g>
+      <h5 className="chart-title-dark">Test Score History</h5>
+      <div className="perf-bar-chart" data-testid={`perf-chart-${subjectName}`}>
+        <div className="perf-bar-yaxis">
+          <span>100%</span>
+          <span>50%</span>
+          <span>0%</span>
+        </div>
+        <div className="perf-bar-area">
+          <div className="perf-bar-grid" style={{ bottom: '50%' }} />
+          {data.map((d, i) => (
+            <div key={i} className="perf-bar-col" title={`${d.test_name}: ${d.percentage}%`}>
+              <div className="perf-bar-value" style={{ color: getBarColor(d.percentage) }}>{d.percentage}%</div>
+              <div className="perf-bar-track">
+                <div
+                  className="perf-bar-fill"
+                  style={{
+                    height: `${Math.max(d.percentage, 3)}%`,
+                    background: `linear-gradient(to top, ${getBarColor(d.percentage)}cc, ${getBarColor(d.percentage)})`,
+                  }}
+                />
+                <div
+                  className="perf-bar-dot"
+                  style={{
+                    bottom: `calc(${Math.max(d.percentage, 3)}% - 6px)`,
+                    background: getBarColor(d.percentage),
+                    boxShadow: `0 0 10px ${getBarColor(d.percentage)}99`,
+                  }}
+                />
+              </div>
+              <div className="perf-bar-date">{d.date?.split('T')[0]?.slice(5) || `T${i + 1}`}</div>
+            </div>
           ))}
-
-          {/* X-axis labels (test dates) */}
-          {points.map((point, i) => (
-            <text 
-              key={`label-${i}`}
-              x={point.x} 
-              y={padding.top + chartHeight + 18} 
-              textAnchor="middle" 
-              className="chart-x-label"
-            >
-              {point.date?.split('T')[0]?.slice(5) || `T${i+1}`}
-            </text>
-          ))}
-        </svg>
+        </div>
       </div>
     </div>
   );
