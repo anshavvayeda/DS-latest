@@ -559,10 +559,21 @@ async def get_test_submissions(
         .order_by(StructuredTestSubmission.submitted_at)
     )
     submissions = sub_result.scalars().all()
+
+    # Batch-fetch student names
+    student_ids = [s.student_id for s in submissions if s.student_id]
+    name_map = {}
+    if student_ids:
+        from app.models.database import StudentProfile
+        profiles = await db.execute(
+            select(StudentProfile).where(StudentProfile.user_id.in_(student_ids))
+        )
+        name_map = {p.user_id: p.name for p in profiles.scalars().all()}
     
     return [{
         "id": s.id,
         "student_id": s.student_id,
+        "student_name": name_map.get(s.student_id, ""),
         "roll_no": s.roll_no,
         "submitted": s.submitted,
         "total_score": s.teacher_final_score if s.teacher_final_score is not None else s.total_score,

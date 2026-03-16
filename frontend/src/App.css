@@ -1111,6 +1111,37 @@ body {
 }
 
 /* Subject Cards - Glassmorphism Style */
+
+/* Student Greeting */
+.student-greeting {
+  text-align: center;
+  margin-bottom: 32px;
+  animation: greetingFadeIn 0.8s ease-out;
+}
+
+@keyframes greetingFadeIn {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.greeting-text {
+  font-family: 'Dancing Script', cursive;
+  font-size: 32px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #c4b5fd 0%, #f9a8d4 50%, #fde68a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.4;
+  display: inline-block;
+}
+
+@media (max-width: 767px) {
+  .greeting-text {
+    font-size: 24px;
+  }
+}
+
 .subjects-grid {
   display: grid !important;
   grid-template-columns: repeat(3, minmax(280px, 1fr)) !important;

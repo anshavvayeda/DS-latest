@@ -30,6 +30,8 @@ import AdminLogin from '@/components/AdminLogin';
 import '@/components/AdminLogin.css';
 import AdminDashboard from '@/components/AdminDashboard';
 import '@/components/AdminDashboard.css';
+import TeacherReviewMode from '@/components/TeacherReviewMode';
+import '@/components/TeacherReviewMode.css';
 
 const API = process.env.REACT_APP_BACKEND_URL 
   ? `${process.env.REACT_APP_BACKEND_URL}/api` 
@@ -2130,6 +2132,13 @@ function StudentView({ user, language, isTeacherPreview = false }) {
             <span className="preview-text">Teacher Preview Mode - View Only (No Submissions Allowed)</span>
           </div>
         )}
+        {!isTeacherPreview && user?.student_profile?.name && (
+          <div className="student-greeting" data-testid="student-greeting">
+            <span className="greeting-text">
+              Hi {user.student_profile.name}, Which subject do you want to study today?
+            </span>
+          </div>
+        )}
         {isTeacherPreview && (
           <div className="standard-selector" style={{
             background: 'rgba(255, 255, 255, 0.05)',
@@ -3257,6 +3266,8 @@ function StudentView({ user, language, isTeacherPreview = false }) {
 function TeacherAITestsList({ subjectId, standard }) {
   const [tests, setTests] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
+  const [reviewTestId, setReviewTestId] = React.useState(null);
+  const [reviewTestTitle, setReviewTestTitle] = React.useState('');
   
   React.useEffect(() => {
     if (!subjectId || !standard) return;
@@ -3269,6 +3280,16 @@ function TeacherAITestsList({ subjectId, standard }) {
   
   if (loading) return <div style={{ color: '#94a3b8', padding: '12px 0', fontSize: 14 }}>Loading AI tests...</div>;
   if (tests.length === 0) return null;
+
+  if (reviewTestId) {
+    return (
+      <TeacherReviewMode
+        testId={reviewTestId}
+        testTitle={reviewTestTitle}
+        onClose={() => { setReviewTestId(null); setReviewTestTitle(''); }}
+      />
+    );
+  }
   
   return (
     <div style={{ marginBottom: 24 }} data-testid="teacher-ai-tests-list">
@@ -3303,6 +3324,23 @@ function TeacherAITestsList({ subjectId, standard }) {
                 {t.submission_deadline && <span>Deadline: {new Date(t.submission_deadline).toLocaleDateString()}</span>}
               </div>
             </div>
+            <button
+              onClick={() => { setReviewTestId(t.id); setReviewTestTitle(t.title); }}
+              data-testid={`review-test-btn-${t.id}`}
+              style={{
+                background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                color: '#fff',
+                border: 'none',
+                padding: '8px 18px',
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Review Submissions
+            </button>
           </div>
         ))}
       </div>
