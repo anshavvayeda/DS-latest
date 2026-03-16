@@ -1,7 +1,7 @@
 """Homework routes: CRUD, submission, evaluation."""
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, update, delete
+from sqlalchemy import select, func, update, delete, desc, text
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime, timezone, timedelta

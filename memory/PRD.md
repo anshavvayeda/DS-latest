@@ -132,6 +132,7 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - Mobile responsive CSS added for Teacher and Student views (375px+)
 - Dead files cleaned up (old test scripts, seed data)
 - All tests passed: Backend 21/21, Frontend 95% (pre-existing Login As User search minor issue)
+- Fixed missing SQLAlchemy imports (and_, desc, text, asc, distinct) across all route modules that caused 500 errors
 
 ### Backend Refactoring (Complete - Mar 16, 2026)
 - Monolithic `server.py` (~5950 lines) split into modular architecture:

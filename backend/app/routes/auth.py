@@ -1,7 +1,7 @@
 """Auth & Admin routes."""
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, delete
+from sqlalchemy import select, func, delete, desc
 from pydantic import BaseModel, validator
 from typing import Optional, List
 from datetime import datetime, timezone

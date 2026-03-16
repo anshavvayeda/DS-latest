@@ -1,7 +1,7 @@
 """Parent dashboard & teacher routes: analytics, study materials, leaderboard."""
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, update, delete
+from sqlalchemy import select, func, update, delete, and_, desc, distinct, text
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime, timezone
