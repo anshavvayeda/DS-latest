@@ -120,6 +120,16 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - Subject classification (strong/average/weak) based on all test data
 - Replaced SVG-based chart with pure HTML/CSS bar chart for reliable rendering
 
+### AI Homework Agent (Complete - Mar 16, 2026)
+- Backend: New route module `structured_homework.py` with full CRUD + hint system
+- DB models: `StructuredHomework`, `StructuredHomeworkQuestion`, `StructuredHomeworkSubmission`
+- AI hint flow: 1st request → AI-generated hint, 2nd request → reveal correct answer
+- No marks/grading — only completed/not completed tracking
+- Deadline with auto-cleanup (answers/hints purged after deadline, completion status retained)
+- Frontend: `StructuredHomeworkCreator.jsx` (teacher), `StudentAIHomework.jsx` (student solver)
+- Question types: MCQ, true/false, fill blank, one word, match following, short/long answer, numerical
+- Tested: 13/13 backend, 100% student flow
+
 ### Frontend Refactoring (Complete - Mar 16, 2026)
 - Monolithic `App.js` (~4664 lines) split into modular components:
   - `App.js` (202 lines): Auth routing, state management
