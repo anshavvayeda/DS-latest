@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { API, getSubjectVectorIcon, getSubjectColorClass, extractErrorMessage } from '@/utils/helpers';
 import StructuredTestCreator from '@/components/StructuredTestCreator';
+import StructuredHomeworkCreator from '@/components/StructuredHomeworkCreator';
 import TestManagement from '@/components/TestManagement';
 import TeacherUpload from '@/components/TeacherUpload';
 import TeacherReviewMode from '@/components/TeacherReviewMode';
@@ -125,6 +126,7 @@ function TeacherView({ user, language }) {
   // UNIFIED EXTRACTION PROGRESS STATE (for homework, pyq, textbook)
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [showAITestCreator, setShowAITestCreator] = useState(false);
+  const [showAIHomeworkCreator, setShowAIHomeworkCreator] = useState(false);
   const [extractionContentId, setExtractionContentId] = useState(null);
   const [extractionContentType, setExtractionContentType] = useState(''); // 'homework', 'pyq', 'test'
   const [extractionProgress, setExtractionProgress] = useState(0);
@@ -1118,11 +1120,41 @@ function TeacherView({ user, language }) {
 
        {/* Homework Tab Content */}
        {activeTab === 'homework' && selectedSubject && (
-         <TestManagement 
-           subjectId={selectedSubject.id} 
-           standard={standard}
-           contentType="homework"
-         />
+         showAIHomeworkCreator ? (
+           <StructuredHomeworkCreator
+             subjectId={selectedSubject.id}
+             subjectName={selectedSubject.name}
+             standard={standard}
+             schoolName={user.school_name}
+             onBack={() => setShowAIHomeworkCreator(false)}
+           />
+         ) : (
+           <div>
+             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+               <button
+                 data-testid="create-ai-homework-btn"
+                 onClick={() => setShowAIHomeworkCreator(true)}
+                 style={{
+                   background: 'linear-gradient(135deg, #48bb78, #38a169)',
+                   color: 'white',
+                   border: 'none',
+                   padding: '10px 20px',
+                   borderRadius: 8,
+                   fontWeight: 600,
+                   cursor: 'pointer',
+                   fontSize: 14,
+                 }}
+               >
+                 + Create AI Homework
+               </button>
+             </div>
+             <TestManagement
+               subjectId={selectedSubject.id}
+               standard={standard}
+               contentType="homework"
+             />
+           </div>
+         )
        )}
        {/* Tests Tab Content */}
        {activeTab === 'tests' && (

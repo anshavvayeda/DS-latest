@@ -8,6 +8,7 @@ import {
 import ToolContentDisplay from '@/components/ToolContentDisplay';
 import HomeworkAnswering from '@/components/HomeworkAnswering';
 import StudentAITest from '@/components/StudentAITest';
+import StudentAIHomework from '@/components/StudentAIHomework';
 import StudentPerformanceDashboard from '@/components/StudentPerformanceDashboard';
 import StudentContentViewer from '@/components/StudentContentViewer';
 
@@ -45,6 +46,8 @@ function StudentView({ user, language, isTeacherPreview = false }) {
   // AI-Evaluated (Structured) Test states
   const [aiTestList, setAiTestList] = useState([]);
   const [selectedAITest, setSelectedAITest] = useState(null);
+  const [selectedAIHomework, setSelectedAIHomework] = useState(null);
+  const [aiHomeworkList, setAiHomeworkList] = useState([]);
   const [showPerformanceDashboard, setShowPerformanceDashboard] = useState(false);
   
   // Student classification for quiz filtering
@@ -283,11 +286,12 @@ function StudentView({ user, language, isTeacherPreview = false }) {
     try {
       // Load ALL data in parallel for speed
       
-      const [chaptersRes, pyqsRes, homeworkRes, aiTestsRes] = await Promise.allSettled([
+      const [chaptersRes, pyqsRes, homeworkRes, aiTestsRes, aiHwRes] = await Promise.allSettled([
         axios.get(`${API}/subjects/${subject.id}/chapters`),
         axios.get(`${API}/subjects/${subject.id}/pyqs?standard=${standard}`),
         axios.get(`${API}/homework?standard=${standard}&subject_id=${subject.id}`, { withCredentials: true }),
         axios.get(`${API}/structured-tests/list/${subject.id}/${standard}`, { withCredentials: true }),
+        axios.get(`${API}/structured-homework/list/${subject.id}/${standard}`, { withCredentials: true }),
       ]);
       
       // Process chapters
@@ -312,6 +316,10 @@ function StudentView({ user, language, isTeacherPreview = false }) {
       // Process AI tests
       const aiTestsData = aiTestsRes.status === 'fulfilled' ? aiTestsRes.value.data : [];
       setAiTestList(Array.isArray(aiTestsData) ? aiTestsData : []);
+
+      // Process AI homework
+      const aiHwData = aiHwRes.status === 'fulfilled' ? (aiHwRes.value.data?.homework || []) : [];
+      setAiHomeworkList(Array.isArray(aiHwData) ? aiHwData : []);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -624,7 +632,7 @@ function StudentView({ user, language, isTeacherPreview = false }) {
   }
 
   // Step 3: Two Column Layout - Chapters and PYQs
-  if (!selectedChapter && !selectedPYQ && !selectedHomework && !selectedAITest) {
+  if (!selectedChapter && !selectedPYQ && !selectedHomework && !selectedAITest && !selectedAIHomework) {
     return (
       <div className="student-view">
         {isTeacherPreview && (
@@ -798,6 +806,77 @@ function StudentView({ user, language, isTeacherPreview = false }) {
               <p style={{ margin: 0 }}>🎉 No homework assigned! Enjoy your free time.</p>
             </div>
           )}
+
+          {/* AI Homework Section */}
+          {aiHomeworkList.length > 0 && (
+            <div style={{ marginTop: '20px' }}>
+              <h4 style={{ color: 'rgba(255,255,255,0.9)', marginBottom: '12px', fontSize: '15px' }}>AI Homework</h4>
+              <div className="homework-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' }}>
+                {aiHomeworkList.map((hw) => (
+                  <div
+                    key={hw.id}
+                    className="homework-card"
+                    data-testid={`ai-homework-${hw.id}`}
+                    onClick={() => !hw.completed && setSelectedAIHomework(hw)}
+                    style={{
+                      borderRadius: '12px',
+                      padding: '20px',
+                      color: 'white',
+                      boxShadow: '0 4px 15px rgba(72, 187, 120, 0.3)',
+                      cursor: hw.completed ? 'default' : 'pointer',
+                      opacity: hw.completed ? 0.7 : 1,
+                    }}
+                  >
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>{hw.title}</h4>
+                    <p style={{ margin: '5px 0', fontSize: '13px', opacity: '0.9' }}>
+                      {hw.question_count} questions
+                    </p>
+                    {hw.deadline && (
+                      <p style={{ margin: '5px 0', fontSize: '13px', opacity: '0.9' }}>
+                        Due: {new Date(hw.deadline).toLocaleDateString()}
+                      </p>
+                    )}
+                    <div style={{ marginTop: '12px' }}>
+                      {hw.completed ? (
+                        <span style={{
+                          background: 'rgba(72, 187, 120, 0.2)',
+                          color: '#48bb78',
+                          padding: '6px 14px',
+                          borderRadius: '20px',
+                          fontSize: '13px',
+                          fontWeight: 600,
+                        }} data-testid={`ai-hw-completed-${hw.id}`}>
+                          Completed
+                        </span>
+                      ) : hw.started ? (
+                        <span style={{
+                          background: 'rgba(251, 191, 36, 0.2)',
+                          color: '#fbbf24',
+                          padding: '6px 14px',
+                          borderRadius: '20px',
+                          fontSize: '13px',
+                          fontWeight: 600,
+                        }}>
+                          In Progress
+                        </span>
+                      ) : (
+                        <span style={{
+                          background: 'rgba(99, 102, 241, 0.2)',
+                          color: '#818cf8',
+                          padding: '6px 14px',
+                          borderRadius: '20px',
+                          fontSize: '13px',
+                          fontWeight: 600,
+                        }}>
+                          Start
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         
         {/* Tests Section */}
@@ -932,6 +1011,26 @@ function StudentView({ user, language, isTeacherPreview = false }) {
               axios.get(`${API}/structured-tests/list/${selectedSubject.id}/${standard}`, { withCredentials: true })
                 .then(res => setAiTestList(res.data || []))
                 .catch(err => console.error('Error reloading AI tests:', err));
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
+  // AI Homework Solver View
+  if (selectedAIHomework) {
+    return (
+      <div className="student-view">
+        <StudentAIHomework
+          homeworkId={selectedAIHomework.id}
+          onBack={() => {
+            setSelectedAIHomework(null);
+            // Reload AI homework list
+            if (selectedSubject && standard) {
+              axios.get(`${API}/structured-homework/list/${selectedSubject.id}/${standard}`, { withCredentials: true })
+                .then(res => setAiHomeworkList(res.data?.homework || []))
+                .catch(err => console.error('Error reloading AI homework:', err));
             }
           }}
         />

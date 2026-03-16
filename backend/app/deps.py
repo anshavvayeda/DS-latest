@@ -66,7 +66,7 @@ async def get_optional_user(
 
 
 async def require_teacher(user: User = Depends(get_current_user)) -> User:
-    if user.role != 'teacher':
+    if user.role not in ('teacher', 'admin'):
         raise HTTPException(status_code=403, detail="Teacher access required")
     return user
 

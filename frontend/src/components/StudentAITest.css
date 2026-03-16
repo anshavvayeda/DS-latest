@@ -532,3 +532,89 @@
   .sat-q-nav { gap: 4px; }
   .sat-q-dot { width: 30px; height: 30px; font-size: 11px; }
 }
+
+/* ===== AI Homework Hint/Answer Styles ===== */
+.hw-hint-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hw-hint-btn {
+  padding: 10px 20px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+.hw-hint-btn:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.25);
+}
+.hw-hint-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hw-hint-box {
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 10px;
+  padding: 16px;
+}
+.hw-hint-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #818cf8;
+  margin-bottom: 8px;
+}
+.hw-hint-box p {
+  color: #c7d2fe;
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+
+.hw-reveal-btn {
+  padding: 8px 16px;
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.hw-reveal-btn:hover:not(:disabled) {
+  background: rgba(251, 191, 36, 0.25);
+}
+.hw-reveal-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hw-answer-box {
+  background: rgba(72, 187, 120, 0.1);
+  border: 1px solid rgba(72, 187, 120, 0.25);
+  border-radius: 10px;
+  padding: 16px;
+}
+.hw-answer-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #48bb78;
+  margin-bottom: 8px;
+}
+.hw-answer-box p {
+  color: #9ae6b4;
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0;
+}
+

@@ -147,6 +147,12 @@ async def retention_cleanup_task():
                     logger.info(f"🧹 Retention cleanup: deleted {deleted} expired evaluation records, summaries retained")
                 else:
                     logger.info("🧹 Retention cleanup: no expired records")
+
+            # Homework deadline cleanup
+            from app.routes.structured_homework import cleanup_expired_homework
+            hw_cleaned = await cleanup_expired_homework()
+            if hw_cleaned > 0:
+                logger.info(f"🧹 Homework cleanup: cleared data for {hw_cleaned} submissions past deadline")
         except Exception as e:
             logger.error(f"Retention cleanup task error: {e}")
 
@@ -157,9 +163,11 @@ from app.routes.content import router as content_router
 from app.routes.homework import router as homework_router
 from app.routes.parent_teacher import router as parent_teacher_router
 from app.routes.structured_tests import router as structured_tests_router
+from app.routes.structured_homework import router as structured_homework_router
 
 app.include_router(auth_router, prefix="/api")
 app.include_router(content_router, prefix="/api")
 app.include_router(homework_router, prefix="/api")
 app.include_router(parent_teacher_router, prefix="/api")
 app.include_router(structured_tests_router, prefix="/api")
+app.include_router(structured_homework_router, prefix="/api")

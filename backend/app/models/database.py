@@ -829,6 +829,76 @@ class EvaluationResult(Base):
     )
 
 
+class StructuredHomework(Base):
+    """AI-powered homework created via structured question builder"""
+    __tablename__ = "structured_homework"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    subject_id = Column(String(36), ForeignKey('subjects.id', ondelete='CASCADE'), nullable=False, index=True)
+    standard = Column(Integer, nullable=False, index=True)
+    title = Column(String(500), nullable=False)
+    school_name = Column(String(500), nullable=True)
+    created_by = Column(String(36), ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+
+    deadline = Column(DateTime(timezone=True), nullable=False)
+    status = Column(String(20), default='draft')  # draft, active, expired
+    question_count = Column(Integer, default=0)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        Index('idx_shw_subject_standard', 'subject_id', 'standard'),
+        Index('idx_shw_school', 'school_name'),
+    )
+
+
+class StructuredHomeworkQuestion(Base):
+    """Individual homework questions (same types as structured tests)"""
+    __tablename__ = "structured_homework_questions"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    homework_id = Column(String(36), ForeignKey('structured_homework.id', ondelete='CASCADE'), nullable=False, index=True)
+    question_number = Column(Integer, nullable=False)
+
+    question_type = Column(String(30), nullable=False)
+    question_text = Column(Text, nullable=False)
+    model_answer = Column(Text, nullable=True)
+    objective_data = Column(JSON, nullable=True)
+    evaluation_points = Column(JSON, nullable=True)
+    solution_steps = Column(JSON, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        Index('idx_shwq_hw_qnum', 'homework_id', 'question_number'),
+    )
+
+
+class StructuredHomeworkSubmission(Base):
+    """Student submissions for structured homework — only tracks completion"""
+    __tablename__ = "structured_homework_submissions"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    homework_id = Column(String(36), ForeignKey('structured_homework.id', ondelete='CASCADE'), nullable=False, index=True)
+    student_id = Column(String(36), ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    roll_no = Column(String(50), nullable=False)
+
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    completed = Column(Boolean, default=False)
+
+    answers_json = Column(JSON, nullable=True)
+    hints_json = Column(JSON, nullable=True)
+    questions_attempted = Column(Integer, default=0)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        Index('idx_shws_hw_student', 'homework_id', 'student_id'),
+    )
+
+
 
 async def init_db():
     """
