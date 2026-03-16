@@ -106,7 +106,7 @@ export default function StudentPerformanceDashboard({ subjectId, subjectName, on
       </div>
 
       {/* Score Trend Chart */}
-      {data.tests_timeline.length > 1 && (
+      {data.tests_timeline.length >= 1 && (
         <div className="spd-chart-card" data-testid="spd-trend-chart">
           <h3>Score Trend</h3>
           <div className="spd-chart">
