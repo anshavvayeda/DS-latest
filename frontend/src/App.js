@@ -11,12 +11,11 @@ import '@/components/StudentProfileView.css';
 import ProfileDropdown from '@/components/ProfileDropdown';
 import '@/components/ProfileDropdown.css';
 import HomeworkAnswering from '@/components/HomeworkAnswering';
-import TestManagement from '@/components/TestManagement';
 import StructuredTestCreator from '@/components/StructuredTestCreator';
+import TestManagement from '@/components/TestManagement';
 import StudentAITest from '@/components/StudentAITest';
 import StudentPerformanceDashboard from '@/components/StudentPerformanceDashboard';
 import '@/components/StudentAITest.css';
-import TestTaking from '@/components/TestTaking';
 import TeacherUpload from '@/components/TeacherUpload';
 import '@/components/TeacherUpload.css';
 import StudentContentViewer from '@/components/StudentContentViewer';
@@ -1633,10 +1632,6 @@ function StudentView({ user, language, isTeacherPreview = false }) {
   const [homeworkLoading, setHomeworkLoading] = useState(false);
   const [studyMaterials, setStudyMaterials] = useState([]);
   
-  // Test states
-  const [testList, setTestList] = useState([]);
-  const [selectedTest, setSelectedTest] = useState(null);
-  
   // AI-Evaluated (Structured) Test states
   const [aiTestList, setAiTestList] = useState([]);
   const [selectedAITest, setSelectedAITest] = useState(null);
@@ -1878,11 +1873,10 @@ function StudentView({ user, language, isTeacherPreview = false }) {
     try {
       // Load ALL data in parallel for speed
       
-      const [chaptersRes, pyqsRes, homeworkRes, testsRes, aiTestsRes] = await Promise.allSettled([
+      const [chaptersRes, pyqsRes, homeworkRes, aiTestsRes] = await Promise.allSettled([
         axios.get(`${API}/subjects/${subject.id}/chapters`),
         axios.get(`${API}/subjects/${subject.id}/pyqs?standard=${standard}`),
         axios.get(`${API}/homework?standard=${standard}&subject_id=${subject.id}`, { withCredentials: true }),
-        axios.get(`${API}/tests/subject/${subject.id}/standard/${standard}`, { withCredentials: true }),
         axios.get(`${API}/structured-tests/list/${subject.id}/${standard}`, { withCredentials: true }),
       ]);
       
@@ -1904,10 +1898,6 @@ function StudentView({ user, language, isTeacherPreview = false }) {
       
       // Process homework
       setHomeworkList(homeworkRes.status === 'fulfilled' ? homeworkRes.value.data : []);
-      
-      // Process old tests
-      const testsData = testsRes.status === 'fulfilled' ? testsRes.value.data : { tests: [] };
-      setTestList(testsData.tests || []);
       
       // Process AI tests
       const aiTestsData = aiTestsRes.status === 'fulfilled' ? aiTestsRes.value.data : [];
@@ -2224,7 +2214,7 @@ function StudentView({ user, language, isTeacherPreview = false }) {
   }
 
   // Step 3: Two Column Layout - Chapters and PYQs
-  if (!selectedChapter && !selectedPYQ && !selectedHomework && !selectedTest && !selectedAITest) {
+  if (!selectedChapter && !selectedPYQ && !selectedHomework && !selectedAITest) {
     return (
       <div className="student-view">
         {isTeacherPreview && (
@@ -2501,63 +2491,7 @@ function StudentView({ user, language, isTeacherPreview = false }) {
           )}
           
           {/* Regular Tests */}
-          {testList.length > 0 ? (
-            <div className="tests-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' }}>
-              {testList.map((test) => (
-                <div 
-                  key={test.id} 
-                  className="test-card"
-                  data-testid={`test-${test.id}`}
-                  style={{ 
-                    borderRadius: '12px',
-                    padding: '20px',
-                    color: 'white',
-                    boxShadow: '0 4px 15px rgba(245, 87, 108, 0.3)',
-                    border: '2px solid rgba(255,255,255,0.3)'
-                  }}
-                >
-                  <h4 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>🧪 {test.title}</h4>
-                  <p style={{ margin: '5px 0', fontSize: '13px', opacity: '0.9' }}>
-                    ⏱️ Duration: {test.duration_minutes} minutes
-                  </p>
-                  <p style={{ margin: '5px 0', fontSize: '13px', opacity: '0.9' }}>
-                    📅 Deadline: {new Date(test.submission_deadline).toLocaleDateString()}
-                  </p>
-                  {test.submitted && (
-                    <p style={{ margin: '10px 0', fontSize: '13px', background: 'rgba(255,255,255,0.2)', padding: '5px 10px', borderRadius: '5px' }}>
-                      ✅ Submitted
-                    </p>
-                  )}
-                  <div style={{ marginTop: '15px' }}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        console.log('Attempt Test clicked for:', test);
-                        setSelectedTest(test);
-                        setFrequentPYQsData(null);  // Clear frequent PYQs data
-                        setShowFrequentPYQs(false);
-                      }}
-                      disabled={test.submitted}
-                      data-testid={`attempt-test-${test.id}`}
-                      style={{
-                        background: test.submitted ? '#ccc' : '#10b981',
-                        color: 'white',
-                        padding: '10px 20px',
-                        borderRadius: '20px',
-                        border: 'none',
-                        cursor: test.submitted ? 'not-allowed' : 'pointer',
-                        fontSize: '14px',
-                        fontWeight: 'bold',
-                        width: '100%'
-                      }}
-                    >
-                      {test.submitted ? '✅ Completed' : test.started ? '⏱️ Continue Test' : '🚀 Attempt Test'}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : aiTestList.length === 0 && (
+          {aiTestList.length === 0 && (
             <div className="info-box">
               <p style={{ margin: 0 }}>No tests scheduled yet.</p>
             </div>
@@ -2569,7 +2503,6 @@ function StudentView({ user, language, isTeacherPreview = false }) {
     );
   }
   
-  console.log('StudentView render - selectedTest:', selectedTest ? 'YES' : 'NO');
   console.log('StudentView render - selectedHomework:', selectedHomework ? 'YES' : 'NO');
   console.log('StudentView render - selectedSubject:', selectedSubject ? selectedSubject.name : 'NO');
   console.log('StudentView render - selectedAITest:', selectedAITest ? selectedAITest.title : 'NO');
@@ -2596,34 +2529,6 @@ function StudentView({ user, language, isTeacherPreview = false }) {
     );
   }
 
-  // Test Taking View
-  if (selectedTest) {
-    console.log('Rendering TestTaking component for test:', selectedTest);
-    return (
-      <div className="student-view">
-        {isTeacherPreview && (
-          <div className="teacher-preview-banner" data-testid="teacher-preview-banner">
-            <span className="preview-icon">👁️</span>
-            <span className="preview-text">Teacher Preview Mode - View Only (No Submissions Allowed)</span>
-          </div>
-        )}
-        <TestTaking
-          test={selectedTest}
-          isTeacherPreview={isTeacherPreview}
-          onClose={() => {
-            setSelectedTest(null);
-            // Reload tests to update status
-            if (selectedSubject && standard) {
-              axios.get(`${API}/tests/subject/${selectedSubject.id}/standard/${standard}`, { withCredentials: true })
-                .then(response => setTestList(response.data.tests || []))
-                .catch(err => console.error('Error reloading tests:', err));
-            }
-          }}
-        />
-      </div>
-    );
-  }
-  
   // Homework Answering View
   if (selectedHomework) {
     return (
@@ -4412,7 +4317,6 @@ function TeacherView({ user, language }) {
                </button>
              </div>
              <TeacherAITestsList subjectId={selectedSubject.id} standard={standard} />
-             <TestManagement subjectId={selectedSubject.id} standard={standard} />
            </div>
          )
        )}

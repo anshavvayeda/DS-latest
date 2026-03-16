@@ -53,6 +53,13 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - Recent tests timeline with grade badges
 - Score trend chart (bar + line overlay, appears with 2+ tests)
 
+### Old Test System Removed (Complete - Mar 16, 2026)
+- Removed ~1800 lines of old test code (PDF upload, S3 JSON, single-prompt LLM evaluation)
+- Deleted: old test routes (POST /tests, GET /tests/subject/*, etc.), TestTaking.jsx/css, cleanup_expired_tests_task
+- Kept: PYQ (study resources), Homework (TestManagement with contentType=homework), all Structured* (new AI system)
+- Parent dashboard updated to only query StructuredTestSubmission
+- Verified: 13/13 backend tests + full frontend UI verification passed
+
 ### Data Retention Policy (Complete - Mar 16, 2026)
 - EvaluationResult TTL: 2 months (changed from 1 month)
 - Background cron job runs every 6 hours to clean up expired detailed evaluation records
