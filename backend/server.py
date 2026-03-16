@@ -5724,7 +5724,7 @@ async def get_parent_dashboard(
             "missed_homework": []
         }
     
-    # 2. Get Test Performance (from TestSubmission - DB only)
+    # 2. Get Test Performance (from TestSubmission - old system - DB only)
     test_submissions_result = await db.execute(
         select(TestSubmission).where(
             TestSubmission.student_id == user.id,
@@ -5753,8 +5753,38 @@ async def get_parent_dashboard(
             "percentage": round(percentage, 1)
         })
     
-    # Update subject_data with test performance
+    # 2b. Get AI-evaluated test performance (from StructuredTestSubmission + StructuredTest)
+    # Build a subject_id -> subject_name lookup from already-fetched subjects
+    subject_id_to_name = {str(s.id): s.name for s in subjects}
+    
+    ai_submissions_result = await db.execute(
+        select(StructuredTestSubmission, StructuredTest).join(
+            StructuredTest, StructuredTestSubmission.test_id == StructuredTest.id
+        ).where(
+            StructuredTestSubmission.student_id == user.id,
+            StructuredTestSubmission.submitted.is_(True),
+            StructuredTestSubmission.evaluation_status == 'completed'
+        ).order_by(StructuredTestSubmission.submitted_at)
+    )
+    ai_submissions = ai_submissions_result.all()
+    
+    for submission, test in ai_submissions:
+        subject_name = subject_id_to_name.get(str(test.subject_id))
+        if not subject_name:
+            continue
+        if subject_name not in subject_scores:
+            subject_scores[subject_name] = []
+        
+        pct = round(submission.percentage, 1) if submission.percentage is not None else 0
+        subject_scores[subject_name].append({
+            "test_name": test.title,
+            "date": submission.submitted_at.isoformat() if submission.submitted_at else None,
+            "percentage": pct
+        })
+    
+    # Sort each subject's scores by date and update subject_data
     for subject_name, scores in subject_scores.items():
+        scores.sort(key=lambda s: s["date"] or "")
         if subject_name in subject_data:
             subject_data[subject_name]["test_performance"] = scores
             
