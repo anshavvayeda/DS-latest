@@ -342,28 +342,36 @@ async def cleanup_expired_tests_task():
 async def retention_cleanup_task():
     """
     Background cron job: Data retention policy for AI evaluation results.
-    Runs every 6 hours. Deletes expired EvaluationResult records (2-month TTL)
-    after condensing per-question feedback into a brief improvement summary
-    on the StructuredTestSubmission record.
+    Runs once daily at midnight (00:00). Deletes expired EvaluationResult records
+    (2-month TTL) after condensing per-question feedback into a brief improvement
+    summary on the StructuredTestSubmission record.
     
     Retained permanently: scores, rank, 1-2 sentence improvement summary.
     Deleted after 2 months: detailed per-question feedback, raw answers.
     """
     import asyncio
-    await asyncio.sleep(30)  # Wait for app startup
-    logger.info("📋 Data retention cleanup task started (runs every 6 hours)")
+    from datetime import datetime, timezone, timedelta
+
+    await asyncio.sleep(10)  # Wait for app startup
+    logger.info("📋 Data retention cleanup task started (runs daily at 00:00)")
 
     while True:
+        # Calculate seconds until next midnight
+        now = datetime.now(timezone.utc)
+        next_midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        wait_seconds = (next_midnight - now).total_seconds()
+        await asyncio.sleep(wait_seconds)
+
         try:
             async with AsyncSessionLocal() as db:
                 from app.routes.structured_tests import _condense_and_cleanup
                 deleted = await _condense_and_cleanup(db)
                 if deleted > 0:
                     logger.info(f"🧹 Retention cleanup: deleted {deleted} expired evaluation records, summaries retained")
+                else:
+                    logger.info("🧹 Retention cleanup: no expired records")
         except Exception as e:
             logger.error(f"Retention cleanup task error: {e}")
-
-        await asyncio.sleep(6 * 3600)  # Every 6 hours
 
 
 # Pydantic Models
