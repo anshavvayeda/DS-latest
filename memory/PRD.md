@@ -87,11 +87,22 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - Subject classification (strong/average/weak) based on all test data
 - Replaced SVG-based chart with pure HTML/CSS bar chart for reliable rendering
 
+### Backend Refactoring (Complete - Mar 16, 2026)
+- Monolithic `server.py` (~5950 lines) split into modular architecture:
+  - `server.py` (165 lines): App setup, CORS, lifecycle, router registration
+  - `app/deps.py` (87 lines): Shared auth dependencies (get_current_user, password hashing, config)
+  - `app/schemas/__init__.py` (137 lines): All Pydantic request/response models
+  - `app/routes/auth.py` (1090 lines): Auth, login, admin CRUD
+  - `app/routes/content.py` (2108 lines): Subjects, chapters, PYQs, student content
+  - `app/routes/homework.py` (1036 lines): Homework CRUD, evaluation
+  - `app/routes/parent_teacher.py` (1274 lines): Parent dashboard, teacher analytics, study materials
+  - `app/routes/structured_tests.py` (904 lines): AI test creation, submission, evaluation
+- All 21 backend + frontend tests passed (100% success rate)
+
 ### Other Completed Work
 - Branding/UI overhaul, bug fixes, CI/CD pipeline, documentation
 
 ## Known Issues
-- **P0**: Login bug - After admin logout, teacher/student login fails (recurring 2x)
 - **P1**: Admin dashboard empty on EC2 (user verification pending)
 
 ## Recently Fixed Bugs (Mar 16, 2026)
@@ -104,15 +115,12 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 ## Prioritized Backlog
 
 ### P0
-- Fix critical login bug (recurring)
-- Phase 5: Teacher Review Mode (teachers view/override AI grades)
+- Frontend refactoring: Split monolithic App.js (~4600 lines) into modular components
 
 ### P1
-- Phase 6: Data retention policy (auto-delete detailed reports after 1 month)
-- Code refactoring (split monolithic server.py and App.js)
+- Fix minor PDF extraction flaws in PYQ feature
 
 ### P2
-- Fix minor PDF extraction flaws
 - Implement Redis caching
 - Add automated testing
 
