@@ -125,7 +125,9 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - DB models: `StructuredHomework`, `StructuredHomeworkQuestion`, `StructuredHomeworkSubmission`
 - **Pre-generated hints**: Hints are generated at publish time (background task) and stored in `hint_text` column on questions. Students get hints from DB — ZERO LLM calls at request time
 - Hint quality: Logical, question-specific, thought-provoking hints that guide reasoning (not generic "refer your notes")
-- AI hint flow: 1st click → pre-generated hint from DB, 2nd click → reveal correct answer
+- AI hint flow: 1st click → pre-generated hint from DB, 2nd click → "Check My Answer" validates student response as correct/incorrect (no answer reveal)
+- Check Answer endpoint: `/api/structured-homework/{id}/check-answer` returns `{correct: true/false}` without revealing the answer
+- Match the Following (student view): Column 1 shows fixed left items, Column 2 shows dropdown selects with shuffled right options. Already-selected options are disabled
 - No marks/grading — only completed/not completed tracking
 - Deadline with auto-cleanup (answers/hints purged after deadline, completion status retained)
 - Frontend: `StructuredHomeworkCreator.jsx` (teacher), `StudentAIHomework.jsx` (student solver)
