@@ -134,10 +134,10 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - Rewrote `StructuredHomeworkCreator.jsx` to use identical CSS classes as `StructuredTestCreator.jsx`
 - Both components now share `StructuredTestCreator.css` with matching class structure
 - Key fixes: MCQ uses `stc-section-box` + `stc-inline`, True/False uses radio buttons (not dropdown), Match pairs use `stc-pair-row` + `stc-arrow`, Model answer wrapped in `stc-section-box`, Publish button in `stc-actions` wrapper
-- Setup page uses `stc-primary-btn` for "Proceed to Add Questions" button
-- Questions page header shows question count badge using `stc-marks-badge`
-- Added `.stc-success` CSS class for homework published confirmation screen
-- Added direct input/textarea styles inside `.stc-section-box` for proper styling
+- **Refined Remove button**: Changed from solid pink/red background to subtle bordered design — transparent by default, turns red on hover
+- **Refined MCQ Options section**: Added border to section box, separator line under heading, white backgrounds on input fields for better contrast, bold labels
+- **Refined Question header**: Added bottom border separator between header and content
+- **Added mobile responsiveness**: Inline options stack vertically on small screens, radio buttons stack, pair rows wrap
 - Fixed teacher registration bug: missing `login_phone` field and `db.flush()` in `/api/auth/register-teacher`
 - Tested: 100% frontend CSS class verification, visual consistency confirmed
 

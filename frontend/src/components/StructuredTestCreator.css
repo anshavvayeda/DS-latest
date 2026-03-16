@@ -28,6 +28,7 @@
   border-radius: 20px;
   font-size: 14px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .stc-back-btn {
@@ -38,6 +39,7 @@
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
+  transition: background 0.2s;
 }
 .stc-back-btn:hover { background: #475569; }
 
@@ -83,6 +85,7 @@
   color: #1e293b;
   background: #f8fafc;
   transition: border-color 0.2s;
+  box-sizing: border-box;
 }
 .stc-field input:focus,
 .stc-field select:focus,
@@ -154,11 +157,14 @@
   margin-bottom: 20px;
 }
 
+/* Question Header (Question N + Remove) */
 .stc-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
 }
 .stc-section h3 {
   font-size: 18px;
@@ -167,8 +173,10 @@
   margin: 0;
 }
 
+/* Section Box (MCQ Options, True/False, Match, Model Answer) */
 .stc-section-box {
   background: #f1f5f9;
+  border: 1px solid #e2e8f0;
   border-radius: 10px;
   padding: 20px;
   margin-top: 16px;
@@ -178,7 +186,9 @@
   font-size: 15px;
   font-weight: 700;
   color: #334155;
-  margin: 0 0 12px 0;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
 }
 .stc-section-box > input,
 .stc-section-box > textarea {
@@ -188,7 +198,7 @@
   border-radius: 8px;
   font-size: 15px;
   color: #1e293b;
-  background: #f8fafc;
+  background: #ffffff;
   transition: border-color 0.2s;
   box-sizing: border-box;
 }
@@ -227,22 +237,52 @@
 .stc-pair-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 10px;
+  margin-bottom: 10px;
 }
-.stc-pair-row input { flex: 1; }
+.stc-pair-row input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #1e293b;
+  background: #ffffff;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.stc-pair-row input:focus {
+  border-color: #667eea;
+  outline: none;
+}
 .stc-arrow {
   color: #667eea;
   font-weight: bold;
   font-size: 18px;
+  flex-shrink: 0;
 }
 
-/* Inline field */
-.stc-inline { display: flex; align-items: center; gap: 12px; }
-.stc-inline label { margin-bottom: 0; min-width: 80px; }
-.stc-inline input { flex: 1; }
+/* Inline field (for MCQ options A/B/C/D) */
+.stc-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.stc-inline label {
+  margin-bottom: 0;
+  min-width: 80px;
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 13px;
+  color: #334155;
+}
+.stc-inline input {
+  flex: 1;
+  width: auto;
+  background: #ffffff;
+}
 
-/* Radio group */
+/* Radio group (True/False) */
 .stc-radio-group {
   display: flex;
   gap: 24px;
@@ -250,10 +290,24 @@
 .stc-radio {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 15px;
   color: #1e293b;
   cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  transition: all 0.2s;
+}
+.stc-radio:hover {
+  border-color: #667eea;
+  background: #f0f0ff;
+}
+.stc-radio input[type="radio"] {
+  accent-color: #667eea;
+  width: 16px;
+  height: 16px;
 }
 
 /* Buttons */
@@ -267,20 +321,27 @@
   font-size: 14px;
   font-weight: 600;
   margin-top: 8px;
+  transition: background 0.2s;
 }
 .stc-add-btn:hover { background: rgba(102, 126, 234, 0.08); }
 
+/* Remove Button — refined, subtle design */
 .stc-remove-btn {
-  background: #fecaca;
-  color: #dc2626;
-  border: none;
+  background: transparent;
+  color: #94a3b8;
+  border: 1.5px solid #e2e8f0;
   padding: 6px 14px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
+  transition: all 0.2s;
 }
-.stc-remove-btn:hover { background: #fca5a5; }
+.stc-remove-btn:hover {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
 
 .stc-remove-sm {
   background: none;
@@ -288,10 +349,15 @@
   color: #94a3b8;
   font-size: 20px;
   cursor: pointer;
-  padding: 0 4px;
+  padding: 2px 6px;
   line-height: 1;
+  border-radius: 4px;
+  transition: all 0.2s;
 }
-.stc-remove-sm:hover { color: #ef4444; }
+.stc-remove-sm:hover {
+  color: #ef4444;
+  background: #fef2f2;
+}
 
 /* Marks Tracker */
 .stc-marks-tracker {
@@ -339,8 +405,9 @@
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
+  transition: opacity 0.2s;
 }
-.stc-publish-btn:disabled { opacity: 0.5; }
+.stc-publish-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .stc-publish-btn:hover:not(:disabled) { opacity: 0.9; }
 
 /* Message */
@@ -370,9 +437,53 @@
   margin-bottom: 24px;
 }
 
-/* Responsive */
+/* ========== Responsive ========== */
+@media (max-width: 768px) {
+  .stc-container {
+    padding: 12px;
+  }
+  .stc-q-editor {
+    padding: 16px;
+  }
+  .stc-setup-form {
+    padding: 20px;
+  }
+  .stc-section-box {
+    padding: 14px;
+  }
+  .stc-inline {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+  .stc-inline label {
+    min-width: unset;
+  }
+  .stc-inline input {
+    width: 100%;
+  }
+  .stc-radio-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .stc-pair-row {
+    flex-wrap: wrap;
+  }
+  .stc-pair-row input {
+    min-width: 0;
+  }
+  .stc-header {
+    gap: 10px;
+  }
+  .stc-header h2 {
+    font-size: 18px;
+  }
+}
+
 @media (max-width: 600px) {
   .stc-row { grid-template-columns: 1fr; }
-  .stc-pair-row { flex-wrap: wrap; }
   .stc-actions { flex-direction: column; }
+  .stc-section h3 {
+    font-size: 16px;
+  }
 }
