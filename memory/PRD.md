@@ -68,8 +68,9 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - **P1**: Admin dashboard empty on EC2 (user verification pending)
 
 ## Recently Fixed Bugs (Mar 16, 2026)
-- **Parent Dashboard graphs not rendering**: Replaced SVG chart (React dynamic SVG circles had zero bounding box) with pure HTML/CSS bar chart that reliably renders data points
-- **Parent Dashboard not showing AI test scores**: Updated `/api/student/parent-dashboard` to query StructuredTestSubmission joined with StructuredTest
+- **CRITICAL Login Bug (P0, Recurring) — FIXED**: After admin logout, student/teacher login was broken. Three root causes: 1) `delete_cookie` didn't match `set_cookie` attributes (samesite/secure/httponly) so cookie was never deleted, 2) Server prioritized stale cookie over fresh Authorization header, 3) Frontend didn't clear stale cookies before new login. All three fixed and verified with 11/11 backend + frontend tests passing.
+- **Parent Dashboard graphs not rendering**: Replaced SVG chart with pure HTML/CSS bar chart
+- **Parent Dashboard not showing AI test scores**: Updated backend to query StructuredTestSubmission
 - **Save Draft was not saving questions before Publish**: `handlePublish` now always calls `handleSave()` first
 - **Parallel data fetching**: Replaced sequential awaits with `Promise.allSettled` to prevent UI hang
 
