@@ -11,7 +11,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://backend-modules-4.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://homework-ui-sync.preview.emergentagent.com')
 
 # Test credentials from the review request
 TEACHER_PHONE = "9999900001"

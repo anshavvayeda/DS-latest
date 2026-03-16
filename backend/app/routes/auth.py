@@ -959,6 +959,7 @@ async def public_teacher_registration(
             profile_completed=True
         )
         db.add(new_user)
+        await db.flush()
         
         # Create StudentProfile record (used for all roles including teachers)
         new_profile = StudentProfile(
@@ -968,6 +969,7 @@ async def public_teacher_registration(
             school_name=request.school_name.strip(),
             standard=None,  # Teachers don't have a standard
             gender=request.gender or 'other',
+            login_phone=request.phone,
             parent_phone=request.parent_phone or request.phone
         )
         db.add(new_profile)

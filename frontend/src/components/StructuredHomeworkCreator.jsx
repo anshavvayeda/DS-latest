@@ -16,7 +16,6 @@ const QUESTION_TYPES = [
 ];
 
 const NEEDS_MODEL_ANSWER = ['short_answer', 'long_answer', 'numerical'];
-const OBJECTIVE_TYPES = ['mcq', 'true_false', 'fill_blank', 'one_word', 'match_following'];
 
 const emptyQuestion = () => ({
   question_number: 1,
@@ -24,8 +23,6 @@ const emptyQuestion = () => ({
   question_text: '',
   model_answer: '',
   objective_data: { options: { a: '', b: '', c: '', d: '' }, correct: '' },
-  evaluation_points: [],
-  solution_steps: [],
 });
 
 export default function StructuredHomeworkCreator({ subjectId, subjectName, standard, schoolName, onBack }) {
@@ -137,36 +134,31 @@ export default function StructuredHomeworkCreator({ subjectId, subjectName, stan
             <div className="stc-readonly-field">{subjectName}</div>
           </div>
           <div className="stc-field">
-            <label>Class</label>
-            <div className="stc-readonly-field">Standard {standard}</div>
-          </div>
-          <div className="stc-field">
             <label>Homework Title</label>
             <input
+              data-testid="hw-title-input"
+              type="text"
               value={hwInfo.title}
               onChange={e => setHwInfo({ ...hwInfo, title: e.target.value })}
               placeholder="e.g. Chapter 5 - Practice Problems"
-              className="stc-input"
-              data-testid="hw-title-input"
             />
           </div>
           <div className="stc-field">
             <label>Deadline</label>
             <input
+              data-testid="hw-deadline-input"
               type="datetime-local"
               value={hwInfo.deadline}
               onChange={e => setHwInfo({ ...hwInfo, deadline: e.target.value })}
-              className="stc-input"
-              data-testid="hw-deadline-input"
             />
           </div>
           <button
-            className="stc-publish-btn"
-            onClick={() => setStep('questions')}
-            disabled={!hwInfo.title || !hwInfo.deadline}
+            className="stc-primary-btn"
             data-testid="hw-next-btn"
+            disabled={!hwInfo.title || !hwInfo.deadline}
+            onClick={() => setStep('questions')}
           >
-            Next: Add Questions
+            Proceed to Add Questions
           </button>
         </div>
       </div>
@@ -179,7 +171,7 @@ export default function StructuredHomeworkCreator({ subjectId, subjectName, stan
         <div className="stc-success" data-testid="hw-success">
           <h2>Homework Published!</h2>
           <p>{message}</p>
-          <button className="stc-publish-btn" onClick={onBack}>Back to Subject</button>
+          <button className="stc-primary-btn" onClick={onBack}>Back to Subject</button>
         </div>
       </div>
     );
@@ -188,85 +180,90 @@ export default function StructuredHomeworkCreator({ subjectId, subjectName, stan
   return (
     <div className="stc-container" data-testid="homework-question-editor">
       <div className="stc-header">
-        <button className="stc-back-btn" onClick={() => setStep('setup')}>Back</button>
-        <h2>Add Questions - {hwInfo.title}</h2>
+        <button className="stc-back-btn" onClick={() => setStep('setup')} data-testid="hw-back-setup">Back to Setup</button>
+        <h2>{hwInfo.title || 'New Homework'}</h2>
+        <div className="stc-marks-badge" data-testid="hw-question-count">
+          {questions.length} question{questions.length > 1 ? 's' : ''}
+        </div>
       </div>
 
-      {/* Question tabs */}
+      {/* Question Tabs */}
       <div className="stc-q-tabs">
         {questions.map((q, i) => (
           <button
             key={i}
             className={`stc-q-tab ${i === activeQ ? 'active' : ''}`}
             onClick={() => setActiveQ(i)}
-            data-testid={`hw-q-tab-${i + 1}`}
+            data-testid={`hw-q-tab-${i}`}
           >
             Q{i + 1}
           </button>
         ))}
-        <button className="stc-q-tab stc-q-add" onClick={addQuestion} data-testid="hw-add-q">+</button>
+        <button className="stc-q-tab add" onClick={addQuestion} data-testid="hw-add-q">+</button>
       </div>
 
-      {/* Question editor */}
       <div className="stc-q-editor">
-        <div className="stc-q-header">
-          <span>Question {activeQ + 1}</span>
+        {/* Question Header */}
+        <div className="stc-section">
+          <h3>Question {activeQ + 1}</h3>
           {questions.length > 1 && (
-            <button className="stc-remove-btn" onClick={() => removeQuestion(activeQ)}>Remove</button>
+            <button className="stc-remove-btn" onClick={() => removeQuestion(activeQ)} data-testid="hw-remove-q">Remove</button>
           )}
         </div>
 
         <div className="stc-field">
           <label>Question Type</label>
           <select
+            data-testid="hw-q-type"
             value={currentQ.question_type}
             onChange={e => handleTypeChange(e.target.value)}
-            className="stc-select"
-            data-testid="hw-q-type"
           >
-            {QUESTION_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            {QUESTION_TYPES.map(t => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
           </select>
         </div>
 
         <div className="stc-field">
           <label>Question Text</label>
           <textarea
+            data-testid="hw-q-text"
             value={currentQ.question_text}
             onChange={e => updateQuestion('question_text', e.target.value)}
-            placeholder="Type the question here..."
-            className="stc-textarea"
+            placeholder="Enter question text..."
             rows={3}
-            data-testid="hw-q-text"
           />
         </div>
 
         {/* MCQ Options */}
         {currentQ.question_type === 'mcq' && (
-          <div className="stc-options-group">
-            <label>Options</label>
-            {['a', 'b', 'c', 'd'].map(key => (
-              <div key={key} className="stc-option-row">
-                <span className="stc-option-label">{key.toUpperCase()}</span>
+          <div className="stc-section-box">
+            <h4>MCQ Options</h4>
+            {['a', 'b', 'c', 'd'].map(opt => (
+              <div className="stc-field stc-inline" key={opt}>
+                <label>Option {opt.toUpperCase()}</label>
                 <input
-                  value={currentQ.objective_data?.options?.[key] || ''}
+                  data-testid={`hw-option-${opt}`}
+                  type="text"
+                  value={(currentQ.objective_data?.options || {})[opt] || ''}
                   onChange={e => {
-                    const obj = { ...(currentQ.objective_data || {}), options: { ...(currentQ.objective_data?.options || {}), [key]: e.target.value } };
+                    const obj = { ...(currentQ.objective_data || {}), options: { ...(currentQ.objective_data?.options || {}) } };
+                    obj.options[opt] = e.target.value;
                     updateQuestion('objective_data', obj);
                   }}
-                  className="stc-input"
-                  placeholder={`Option ${key.toUpperCase()}`}
+                  placeholder={`Option ${opt.toUpperCase()}`}
                 />
               </div>
             ))}
             <div className="stc-field">
-              <label>Correct Answer</label>
+              <label>Correct Option</label>
               <select
+                data-testid="hw-correct-option"
                 value={currentQ.objective_data?.correct || ''}
                 onChange={e => updateQuestion('objective_data', { ...currentQ.objective_data, correct: e.target.value })}
-                className="stc-select"
               >
-                <option value="">Select correct option</option>
-                {['a', 'b', 'c', 'd'].map(k => <option key={k} value={k}>{k.toUpperCase()}</option>)}
+                <option value="">Select</option>
+                {['a', 'b', 'c', 'd'].map(o => <option key={o} value={o}>{o.toUpperCase()}</option>)}
               </select>
             </div>
           </div>
@@ -274,89 +271,99 @@ export default function StructuredHomeworkCreator({ subjectId, subjectName, stan
 
         {/* True/False */}
         {currentQ.question_type === 'true_false' && (
-          <div className="stc-field">
-            <label>Correct Answer</label>
-            <select
-              value={currentQ.objective_data?.correct === true ? 'true' : currentQ.objective_data?.correct === false ? 'false' : ''}
-              onChange={e => updateQuestion('objective_data', { correct: e.target.value === 'true' })}
-              className="stc-select"
-            >
-              <option value="">Select</option>
-              <option value="true">True</option>
-              <option value="false">False</option>
-            </select>
+          <div className="stc-section-box">
+            <h4>Correct Answer</h4>
+            <div className="stc-radio-group">
+              {['true', 'false'].map(v => (
+                <label key={v} className="stc-radio">
+                  <input
+                    type="radio"
+                    name={`hw-tf-${activeQ}`}
+                    checked={currentQ.objective_data?.correct === v}
+                    onChange={() => updateQuestion('objective_data', { correct: v })}
+                    data-testid={`hw-tf-${v}`}
+                  />
+                  {v.charAt(0).toUpperCase() + v.slice(1)}
+                </label>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Fill/One word */}
+        {/* Fill / One Word */}
         {(currentQ.question_type === 'fill_blank' || currentQ.question_type === 'one_word') && (
-          <div className="stc-field">
-            <label>Correct Answer</label>
+          <div className="stc-section-box">
+            <h4>Correct Answer</h4>
             <input
+              data-testid="hw-correct-answer"
+              type="text"
               value={currentQ.objective_data?.correct || ''}
               onChange={e => updateQuestion('objective_data', { correct: e.target.value })}
-              className="stc-input"
-              placeholder="Type the correct answer"
+              placeholder={currentQ.question_type === 'one_word' ? 'Single word answer' : 'Fill in the blank answer'}
             />
           </div>
         )}
 
         {/* Match the Following */}
         {currentQ.question_type === 'match_following' && (
-          <div className="stc-options-group">
-            <label>Match Pairs</label>
+          <div className="stc-section-box">
+            <h4>Matching Pairs</h4>
             {(currentQ.objective_data?.pairs || []).map((pair, idx) => (
-              <div key={idx} className="stc-match-row">
+              <div className="stc-pair-row" key={idx}>
                 <input
+                  data-testid={`hw-match-left-${idx}`}
+                  type="text"
                   value={pair.left}
                   onChange={e => updatePair(idx, 'left', e.target.value)}
-                  className="stc-input"
                   placeholder="Left side"
                 />
-                <span className="stc-match-arrow">→</span>
+                <span className="stc-arrow">→</span>
                 <input
+                  data-testid={`hw-match-right-${idx}`}
+                  type="text"
                   value={pair.right}
                   onChange={e => updatePair(idx, 'right', e.target.value)}
-                  className="stc-input"
                   placeholder="Right side"
                 />
-                <button className="stc-remove-btn" onClick={() => removePair(idx)}>×</button>
+                <button className="stc-remove-sm" onClick={() => removePair(idx)}>×</button>
               </div>
             ))}
-            <button className="stc-add-small-btn" onClick={addPair}>+ Add Pair</button>
+            <button className="stc-add-btn" onClick={addPair} data-testid="hw-add-pair">+ Add Pair</button>
           </div>
         )}
 
-        {/* Model Answer for subjective */}
+        {/* Model Answer for subjective types */}
         {NEEDS_MODEL_ANSWER.includes(currentQ.question_type) && (
-          <div className="stc-field">
-            <label>Model Answer</label>
+          <div className="stc-section-box">
+            <h4>Model Answer</h4>
             <textarea
+              data-testid="hw-model-answer"
               value={currentQ.model_answer || ''}
               onChange={e => updateQuestion('model_answer', e.target.value)}
-              className="stc-textarea"
+              placeholder="Enter the ideal answer that represents the expected response..."
               rows={4}
-              placeholder="The expected answer..."
             />
           </div>
         )}
       </div>
 
-      {/* Status bar */}
-      <div className="stc-status-bar">
-        <span>{questions.length} question{questions.length > 1 ? 's' : ''}</span>
-        {message && <span className="stc-message">{message}</span>}
+      {/* Actions */}
+      <div className="stc-actions">
+        <button
+          className="stc-publish-btn"
+          onClick={handleSaveAndPublish}
+          disabled={publishing || questions.some(q => !q.question_text)}
+          data-testid="hw-publish-btn"
+        >
+          {publishing ? 'Publishing...' : 'Save & Publish Homework'}
+        </button>
       </div>
 
-      {/* Publish */}
-      <button
-        className="stc-publish-btn"
-        onClick={handleSaveAndPublish}
-        disabled={publishing || questions.some(q => !q.question_text)}
-        data-testid="hw-publish-btn"
-      >
-        {publishing ? 'Publishing...' : 'Save & Publish Homework'}
-      </button>
+      {message && (
+        <div className={`stc-message ${message.startsWith('Error') ? 'error' : 'success'}`} data-testid="hw-message">
+          {message}
+        </div>
+      )}
     </div>
   );
 }

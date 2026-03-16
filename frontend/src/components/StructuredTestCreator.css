@@ -180,6 +180,24 @@
   color: #334155;
   margin: 0 0 12px 0;
 }
+.stc-section-box > input,
+.stc-section-box > textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #1e293b;
+  background: #f8fafc;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.stc-section-box > input:focus,
+.stc-section-box > textarea:focus {
+  border-color: #667eea;
+  outline: none;
+  background: #fff;
+}
 
 .stc-hint {
   font-size: 13px;
@@ -335,6 +353,22 @@
 }
 .stc-message.success { background: #dcfce7; color: #16a34a; }
 .stc-message.error { background: #fecaca; color: #dc2626; }
+
+/* Success State */
+.stc-success {
+  text-align: center;
+  padding: 40px 20px;
+}
+.stc-success h2 {
+  color: #16a34a;
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+.stc-success p {
+  color: #475569;
+  font-size: 16px;
+  margin-bottom: 24px;
+}
 
 /* Responsive */
 @media (max-width: 600px) {

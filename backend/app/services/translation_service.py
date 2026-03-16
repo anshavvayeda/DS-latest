@@ -36,7 +36,7 @@ async def call_openrouter_for_translation(prompt: str, system_message: str, time
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://backend-modules-4.preview.emergentagent.com",
+        "HTTP-Referer": "https://homework-ui-sync.preview.emergentagent.com",
         "X-Title": "StudyBuddy Translation"
     }
     
