@@ -130,6 +130,17 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - Question types: MCQ, true/false, fill blank, one word, match following, short/long answer, numerical
 - Tested: 13/13 backend, 100% student flow
 
+### AI Homework UI Polish (Complete - Mar 16, 2026)
+- Rewrote `StructuredHomeworkCreator.jsx` to use identical CSS classes as `StructuredTestCreator.jsx`
+- Both components now share `StructuredTestCreator.css` with matching class structure
+- Key fixes: MCQ uses `stc-section-box` + `stc-inline`, True/False uses radio buttons (not dropdown), Match pairs use `stc-pair-row` + `stc-arrow`, Model answer wrapped in `stc-section-box`, Publish button in `stc-actions` wrapper
+- Setup page uses `stc-primary-btn` for "Proceed to Add Questions" button
+- Questions page header shows question count badge using `stc-marks-badge`
+- Added `.stc-success` CSS class for homework published confirmation screen
+- Added direct input/textarea styles inside `.stc-section-box` for proper styling
+- Fixed teacher registration bug: missing `login_phone` field and `db.flush()` in `/api/auth/register-teacher`
+- Tested: 100% frontend CSS class verification, visual consistency confirmed
+
 ### Frontend Refactoring (Complete - Mar 16, 2026)
 - Monolithic `App.js` (~4664 lines) split into modular components:
   - `App.js` (202 lines): Auth routing, state management
@@ -172,6 +183,7 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 ## Prioritized Backlog
 
 ### P1
+- Delete old PDF homework system (pending user approval of new AI homework)
 - Fix minor PDF extraction flaws in PYQ feature
 - Fix pre-existing "Login As User" search display bug in AdminDashboard
 
@@ -182,3 +194,4 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 ## Test Credentials
 - **Admin**: username `admin`, password `Admin@123`
 - **Student**: roll_no `S001`, password `123456`
+- **Teacher**: roll_no `teacher4`, password `Test@123`
