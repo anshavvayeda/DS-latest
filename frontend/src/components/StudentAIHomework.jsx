@@ -59,16 +59,37 @@ export default function StudentAIHomework({ homeworkId, onBack }) {
       });
       const qKey = String(qNum);
       setHintContent(prev => ({ ...prev, [qKey]: resp.data }));
-      // Update local hints state
       setHints(prev => ({
         ...prev,
         [qKey]: {
           hint_used: true,
-          answer_revealed: resp.data.type === 'answer',
+          answer_revealed: false,
         },
       }));
     } catch (err) {
       console.error('Hint request failed:', err);
+    }
+    setHintLoading(false);
+  };
+
+  const checkAnswer = async (qNum) => {
+    setHintLoading(true);
+    try {
+      const resp = await axios.post(`${API}/api/structured-homework/${homeworkId}/check-answer`, {
+        question_number: qNum,
+        student_answer: answers[String(qNum)] || '',
+      });
+      const qKey = String(qNum);
+      setHintContent(prev => ({
+        ...prev,
+        [qKey]: {
+          ...prev[qKey],
+          checked: true,
+          correct: resp.data.correct,
+        },
+      }));
+    } catch (err) {
+      console.error('Check answer failed:', err);
     }
     setHintLoading(false);
   };
@@ -203,42 +224,32 @@ export default function StudentAIHomework({ homeworkId, onBack }) {
               <div className="hw-hint-box" data-testid="hw-hint-box">
                 <div className="hw-hint-label">Hint</div>
                 <p>{qHintData.content}</p>
-                <button
-                  className="hw-reveal-btn"
-                  onClick={() => requestHint(currentQ.question_number)}
-                  disabled={hintLoading}
-                  data-testid="hw-reveal-btn"
-                >
-                  {hintLoading ? 'Loading...' : 'Show Answer'}
-                </button>
+                {qHintData.checked ? (
+                  <div className={`hw-check-result ${qHintData.correct ? 'correct' : 'incorrect'}`} data-testid="hw-check-result">
+                    {qHintData.correct ? 'Correct! Well done!' : 'Not quite right. Try again!'}
+                  </div>
+                ) : (
+                  <button
+                    className="hw-check-btn"
+                    onClick={() => checkAnswer(currentQ.question_number)}
+                    disabled={hintLoading || !answers[qKey]?.toString().trim()}
+                    data-testid="hw-check-btn"
+                  >
+                    {hintLoading ? 'Checking...' : 'Check My Answer'}
+                  </button>
+                )}
               </div>
             )}
 
-            {qHintData?.type === 'answer' && (
-              <div className="hw-answer-box" data-testid="hw-answer-revealed">
-                <div className="hw-answer-label">Answer</div>
-                <p>{qHintData.content}</p>
-              </div>
-            )}
-
-            {/* Show previously revealed hint/answer on revisit */}
-            {!qHintData && qHints.hint_used && !qHints.answer_revealed && (
-              <button
-                className="hw-reveal-btn"
-                onClick={() => requestHint(currentQ.question_number)}
-                disabled={hintLoading}
-              >
-                {hintLoading ? 'Loading...' : 'Show Answer'}
-              </button>
-            )}
-            {!qHintData && qHints.answer_revealed && (
+            {/* Show hint box on revisit if hint was used */}
+            {!qHintData && qHints.hint_used && (
               <button
                 className="hw-hint-btn"
                 onClick={() => requestHint(currentQ.question_number)}
                 disabled={hintLoading}
                 style={{ opacity: 0.7 }}
               >
-                Show Answer Again
+                {hintLoading ? 'Loading...' : 'View Hint Again'}
               </button>
             )}
           </div>
@@ -321,18 +332,33 @@ function QuestionInput({ question, answer, onChange }) {
 
   if (type === 'match_following') {
     const leftItems = question.pairs_left || [];
+    const rightOptions = question.pairs_right || [];
     let matchObj = {};
     try { matchObj = typeof answer === 'string' ? JSON.parse(answer) : (answer || {}); } catch { matchObj = {}; }
+    const usedValues = Object.values(matchObj).filter(v => v);
     return (
       <div className="sat-match-section">
         <p className="sat-match-hint">Match each item on the left with the correct item on the right</p>
         {leftItems.map((left, idx) => (
           <div key={idx} className="sat-match-row">
             <span className="sat-match-left">{left}</span>
-            <span className="sat-match-arrow">-></span>
-            <input className="sat-match-input" type="text" value={matchObj[String(idx)] || ''}
+            <span className="sat-match-arrow">&rarr;</span>
+            <select
+              className="sat-match-select"
+              value={matchObj[String(idx)] || ''}
               onChange={e => { onChange(JSON.stringify({ ...matchObj, [String(idx)]: e.target.value })); }}
-              placeholder="Your match" />
+              data-testid={`hw-match-select-${idx}`}
+            >
+              <option value="">Select match</option>
+              {rightOptions.map((right, rIdx) => {
+                const isUsed = usedValues.includes(right) && matchObj[String(idx)] !== right;
+                return (
+                  <option key={rIdx} value={right} disabled={isUsed}>
+                    {right}
+                  </option>
+                );
+              })}
+            </select>
           </div>
         ))}
       </div>

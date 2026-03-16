@@ -267,6 +267,19 @@
 }
 .sat-match-input:focus { border-color: #667eea; outline: none; }
 
+.sat-match-select {
+  flex: 1;
+  padding: 10px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1e293b;
+  background: #f8fafc;
+  cursor: pointer;
+  appearance: auto;
+}
+.sat-match-select:focus { border-color: #667eea; outline: none; }
+
 /* Navigation */
 .sat-nav-btns {
   display: flex;
@@ -595,6 +608,42 @@
 .hw-reveal-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.hw-check-btn {
+  padding: 8px 16px;
+  background: rgba(72, 187, 120, 0.15);
+  color: #48bb78;
+  border: 1px solid rgba(72, 187, 120, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.hw-check-btn:hover:not(:disabled) {
+  background: rgba(72, 187, 120, 0.25);
+}
+.hw-check-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hw-check-result {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.hw-check-result.correct {
+  background: rgba(72, 187, 120, 0.15);
+  color: #48bb78;
+  border: 1px solid rgba(72, 187, 120, 0.3);
+}
+.hw-check-result.incorrect {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .hw-answer-box {

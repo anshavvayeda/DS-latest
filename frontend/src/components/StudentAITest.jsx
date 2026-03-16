@@ -342,8 +342,10 @@ function QuestionInput({ question, answer, onChange }) {
 
   if (type === 'match_following') {
     const leftItems = question.objective_data?.pairs_left || [];
+    const rightOptions = question.objective_data?.pairs_right || [];
     let matchObj = {};
     try { matchObj = typeof answer === 'string' ? JSON.parse(answer) : (answer || {}); } catch { matchObj = {}; }
+    const usedValues = Object.values(matchObj).filter(v => v);
 
     return (
       <div className="sat-match-section" data-testid="sat-match-section">
@@ -351,18 +353,26 @@ function QuestionInput({ question, answer, onChange }) {
         {leftItems.map((left, idx) => (
           <div key={idx} className="sat-match-row">
             <span className="sat-match-left">{left}</span>
-            <span className="sat-match-arrow">→</span>
-            <input
-              className="sat-match-input"
-              type="text"
+            <span className="sat-match-arrow">&rarr;</span>
+            <select
+              className="sat-match-select"
               value={matchObj[String(idx)] || ''}
               onChange={e => {
                 const updated = { ...matchObj, [String(idx)]: e.target.value };
                 onChange(JSON.stringify(updated));
               }}
-              placeholder="Your match"
-              data-testid={`sat-match-input-${idx}`}
-            />
+              data-testid={`sat-match-select-${idx}`}
+            >
+              <option value="">Select match</option>
+              {rightOptions.map((right, rIdx) => {
+                const isUsed = usedValues.includes(right) && matchObj[String(idx)] !== right;
+                return (
+                  <option key={rIdx} value={right} disabled={isUsed}>
+                    {right}
+                  </option>
+                );
+              })}
+            </select>
           </div>
         ))}
       </div>

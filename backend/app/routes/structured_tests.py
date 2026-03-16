@@ -236,7 +236,14 @@ async def get_test(
             q_dict["objective_data"] = {"options": obj.get("options", {})}
         elif q.question_type == "match_following":
             obj = q.objective_data or {}
-            q_dict["objective_data"] = {"pairs_left": [p.get("left", "") for p in obj.get("pairs", [])]}
+            pairs = obj.get("pairs", [])
+            import random
+            rights = [p.get("right", "") for p in pairs]
+            random.shuffle(rights)
+            q_dict["objective_data"] = {
+                "pairs_left": [p.get("left", "") for p in pairs],
+                "pairs_right": rights,
+            }
         
         questions_list.append(q_dict)
     

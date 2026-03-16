@@ -155,8 +155,12 @@ async def get_homework(homework_id: str, db: AsyncSession = Depends(get_db), use
         if q.question_type == 'mcq' and q.objective_data:
             qd["options"] = q.objective_data.get("options", {})
         elif q.question_type == 'match_following' and q.objective_data:
-            qd["pairs_left"] = [p["left"] for p in q.objective_data.get("pairs", [])]
-            qd["pairs_right"] = [p["right"] for p in q.objective_data.get("pairs", [])]
+            import random
+            pairs = q.objective_data.get("pairs", [])
+            rights = [p["right"] for p in pairs]
+            random.shuffle(rights)
+            qd["pairs_left"] = [p["left"] for p in pairs]
+            qd["pairs_right"] = rights
         elif q.question_type == 'true_false':
             qd["options"] = {"a": "True", "b": "False"}
 
@@ -301,6 +305,28 @@ async def get_hint(homework_id: str, data: dict, db: AsyncSession = Depends(get_
     sub.hints_json = hints
     await db.commit()
     return {"type": "hint", "content": hint_text}
+
+
+@router.post("/{homework_id}/check-answer")
+async def check_answer(homework_id: str, data: dict, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_user)):
+    """Check student's answer against correct answer. Returns correct/incorrect without revealing the answer."""
+    question_number = data.get("question_number")
+    student_answer = data.get("student_answer", "")
+
+    q_result = await db.execute(
+        select(StructuredHomeworkQuestion).where(
+            and_(
+                StructuredHomeworkQuestion.homework_id == homework_id,
+                StructuredHomeworkQuestion.question_number == question_number,
+            )
+        )
+    )
+    question = q_result.scalar_one_or_none()
+    if not question:
+        raise HTTPException(status_code=404, detail="Question not found")
+
+    is_correct = _check_student_answer(question, student_answer)
+    return {"correct": is_correct}
 
 
 @router.post("/{homework_id}/complete")
@@ -491,7 +517,6 @@ def _get_correct_answer(question):
 
 def _fallback_hint(question):
     """Deterministic fallback hint when LLM hint is unavailable."""
-    correct = _get_correct_answer(question)
     qt = question.question_type
 
     if qt == 'mcq':
@@ -499,7 +524,7 @@ def _fallback_hint(question):
     elif qt == 'true_false':
         return "Break the statement into individual claims and verify each one. A statement is only True if every part of it is accurate."
     elif qt == 'fill_blank':
-        return f"Think about the key concept this sentence is describing. The missing word is closely related to the main topic of the sentence."
+        return "Think about the key concept this sentence is describing. The missing word is closely related to the main topic of the sentence."
     elif qt == 'one_word':
         return "Focus on the definition or description in the question. The answer is a specific term that fits this description exactly."
     elif qt == 'match_following':
@@ -509,3 +534,36 @@ def _fallback_hint(question):
     elif qt in ('short_answer', 'long_answer'):
         return "Identify the key concept the question is asking about. Structure your answer by first stating the main idea, then supporting it with specific details or examples."
     return "Think about the core concept this question tests. Review the key terms and their definitions."
+
+
+def _check_student_answer(question, student_answer) -> bool:
+    """Check if student's answer is correct."""
+    if not student_answer:
+        return False
+
+    qt = question.question_type
+    obj = question.objective_data or {}
+
+    if qt == 'mcq':
+        return str(student_answer).strip().lower() == str(obj.get("correct", "")).strip().lower()
+    elif qt == 'true_false':
+        return str(student_answer).strip().lower() == str(obj.get("correct", "")).strip().lower()
+    elif qt in ('fill_blank', 'one_word'):
+        return str(student_answer).strip().lower() == str(obj.get("correct", "")).strip().lower()
+    elif qt == 'match_following':
+        pairs = obj.get("pairs", [])
+        try:
+            match_obj = json.loads(student_answer) if isinstance(student_answer, str) else student_answer
+        except (json.JSONDecodeError, TypeError):
+            return False
+        if not isinstance(match_obj, dict):
+            return False
+        for idx, pair in enumerate(pairs):
+            student_match = str(match_obj.get(str(idx), "")).strip().lower()
+            correct_match = str(pair.get("right", "")).strip().lower()
+            if student_match != correct_match:
+                return False
+        return True
+    else:
+        # Subjective — can't auto-check, always return False to prompt further thinking
+        return False
