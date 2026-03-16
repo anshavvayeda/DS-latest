@@ -20,11 +20,44 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 7. **Data Retention**: Detailed reports for 1 month, scores for academic year (upcoming)
 
 ## Architecture
-- **Backend**: FastAPI + PostgreSQL + SQLAlchemy
-- **Frontend**: React
+- **Backend**: FastAPI + PostgreSQL + SQLAlchemy (modular routes)
+- **Frontend**: React (modular components)
 - **AI**: OpenRouter (GPT-4o, Gemini Flash Lite)
 - **Storage**: AWS S3
 - **CI/CD**: GitHub Actions → EC2
+
+### Backend Structure (Refactored Mar 16, 2026)
+```
+/app/backend/
+├── server.py              (165 lines - App setup, CORS, lifecycle)
+├── app/
+│   ├── deps.py            (87 lines - Shared auth, config)
+│   ├── schemas/__init__.py (137 lines - Pydantic models)
+│   ├── routes/
+│   │   ├── auth.py         (1090 lines - Auth, admin CRUD)
+│   │   ├── content.py      (2108 lines - Subjects, chapters, PYQs)
+│   │   ├── homework.py     (1036 lines - Homework CRUD, evaluation)
+│   │   ├── parent_teacher.py (1274 lines - Parent/teacher dashboards)
+│   │   └── structured_tests.py (904 lines - AI test lifecycle)
+│   ├── models/database.py  (DB models, engine)
+│   └── services/           (AI, storage, auth, translation)
+```
+
+### Frontend Structure (Refactored Mar 16, 2026)
+```
+/app/frontend/src/
+├── App.js                 (202 lines - Router, auth shell)
+├── utils/helpers.js       (319 lines - Shared utilities)
+├── components/
+│   ├── AuthScreen.jsx     (548 lines - Login, register, reset)
+│   ├── Header.jsx         (76 lines - Navigation header)
+│   ├── StudentView.jsx    (1580 lines - Student dashboard)
+│   ├── TeacherView.jsx    (1502 lines - Teacher dashboard)
+│   ├── ToolContentDisplay.jsx (401 lines - Learning content)
+│   ├── AdminDashboard.jsx (Admin panel)
+│   ├── StudentAITest.jsx  (Test taking)
+│   └── ... (other components)
+```
 
 ## What's Been Implemented
 
@@ -87,6 +120,19 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - Subject classification (strong/average/weak) based on all test data
 - Replaced SVG-based chart with pure HTML/CSS bar chart for reliable rendering
 
+### Frontend Refactoring (Complete - Mar 16, 2026)
+- Monolithic `App.js` (~4664 lines) split into modular components:
+  - `App.js` (202 lines): Auth routing, state management
+  - `utils/helpers.js` (319 lines): Shared utilities (API, icons, translate)
+  - `AuthScreen.jsx` (548 lines): Login, register, password reset
+  - `Header.jsx` (76 lines): Navigation header with role toggle
+  - `StudentView.jsx` (1580 lines): Student dashboard, subjects, tools
+  - `TeacherView.jsx` (1502 lines): Teacher dashboard, content management
+  - `ToolContentDisplay.jsx` (401 lines): Learning tool content renderer
+- Mobile responsive CSS added for Teacher and Student views (375px+)
+- Dead files cleaned up (old test scripts, seed data)
+- All tests passed: Backend 21/21, Frontend 95% (pre-existing Login As User search minor issue)
+
 ### Backend Refactoring (Complete - Mar 16, 2026)
 - Monolithic `server.py` (~5950 lines) split into modular architecture:
   - `server.py` (165 lines): App setup, CORS, lifecycle, router registration
@@ -114,11 +160,9 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 
 ## Prioritized Backlog
 
-### P0
-- Frontend refactoring: Split monolithic App.js (~4600 lines) into modular components
-
 ### P1
 - Fix minor PDF extraction flaws in PYQ feature
+- Fix pre-existing "Login As User" search display bug in AdminDashboard
 
 ### P2
 - Implement Redis caching
