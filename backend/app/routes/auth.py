@@ -11,14 +11,13 @@ from app.models.database import (
     get_db, User, StudentProfile, StudentExamScore,
     StudentPracticeProgress, StudentHomeworkStatus, AsyncSessionLocal
 )
-from app.services.auth_service import create_otp, verify_otp, get_or_create_user, create_jwt_token, decode_jwt_token
-from app.deps import get_current_user, require_admin, hash_password, verify_password, get_user_school, ADMIN_USERNAME, ADMIN_PASSWORD, OTP_STORE
+from app.services.auth_service import get_or_create_user, create_jwt_token, decode_jwt_token
+from app.deps import get_current_user, require_admin, hash_password, verify_password, get_user_school, ADMIN_USERNAME, ADMIN_PASSWORD
 from app.schemas import (
-    SendOTPRequest, VerifyOTPRequest, AdminLoginRequest,
+    AdminLoginRequest,
     AdminRegisterStudentRequest, AdminBulkRegisterRequest,
     AdminResetPasswordRequest, AdminImpersonateRequest,
-    RollNoLoginRequest, RequestPasswordResetOTPRequest,
-    UserResetPasswordRequest,
+    RollNoLoginRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -26,70 +25,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # Auth Routes
-@router.post("/auth/send-otp")
-async def send_otp(request: SendOTPRequest, db: AsyncSession = Depends(get_db)):
-    if request.type not in ['email', 'phone']:
-        raise HTTPException(status_code=400, detail="Type must be 'email' or 'phone'")
-    
-    otp = await create_otp(db, request.identifier, request.type)
-    if not otp:
-        raise HTTPException(status_code=500, detail="Failed to send OTP")
-    
-    return {"message": "OTP sent successfully", "identifier": request.identifier}
-
-@router.post("/auth/verify-otp")
-async def verify_otp_endpoint(request: VerifyOTPRequest, response: Response, db: AsyncSession = Depends(get_db)):
-    is_valid = await verify_otp(db, request.identifier, request.code)
-    if not is_valid:
-        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
-    
-    identifier_type = 'email' if '@' in request.identifier else 'phone'
-    user = await get_or_create_user(
-        db,
-        email=request.identifier if identifier_type == 'email' else None,
-        phone=request.identifier if identifier_type == 'phone' else None
-    )
-    
-    token = create_jwt_token(str(user.id), user.role)
-    
-    response.set_cookie(
-        key="auth_token",
-        value=token,
-        httponly=True,
-        max_age=86400,
-        samesite="None",
-        secure=True
-    )
-    
-    # Check if student profile is completed
-    profile_completed = user.profile_completed if hasattr(user, 'profile_completed') else False
-    
-    # For students, check if profile exists
-    student_profile = None
-    if user.role == 'student':
-        result = await db.execute(select(StudentProfile).where(StudentProfile.user_id == str(user.id)))
-        profile = result.scalars().first()
-        if profile:
-            profile_completed = True
-            student_profile = {
-                "name": profile.name,
-                "roll_no": profile.roll_no,
-                "school_name": profile.school_name,
-                "standard": profile.standard,
-                "gender": profile.gender
-            }
-    
-    return {
-        "message": "Login successful",
-        "user": {
-            "id": str(user.id),
-            "email": user.email,
-            "phone": user.phone,
-            "role": user.role,
-            "profile_completed": profile_completed
-        },
-        "student_profile": student_profile
-    }
 
 class PasswordLoginRequest(BaseModel):
     phone: str
@@ -903,189 +838,6 @@ async def login_with_rollno(
         }
     }
 
-@router.post("/auth/register-teacher")
-async def public_teacher_registration(
-    request: AdminRegisterStudentRequest,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    PUBLIC endpoint for teacher self-registration.
-    Teachers can register themselves without admin authentication.
-    This creates the school namespace for students to join later.
-    """
-    import uuid
-    
-    # Only allow teacher registration through this endpoint
-    if request.role != 'teacher':
-        raise HTTPException(status_code=400, detail="This endpoint is only for teacher registration. Students must be registered by admin.")
-    
-    # School name is required for teachers
-    if not request.school_name or not request.school_name.strip():
-        raise HTTPException(status_code=400, detail="School name is required for teachers")
-    
-    # Roll number is required
-    if not request.roll_no:
-        raise HTTPException(status_code=400, detail="Roll number is required")
-    
-    # Convert empty email string to None
-    email_value = request.email.strip() if request.email and request.email.strip() else None
-    
-    # Check if phone already exists
-    existing_phone = await db.execute(select(User).where(User.phone == request.phone))
-    if existing_phone.scalars().first():
-        raise HTTPException(status_code=400, detail=f"Phone number {request.phone} already registered")
-    
-    # Check if email already exists (if provided)
-    if email_value:
-        existing_email = await db.execute(select(User).where(User.email == email_value))
-        if existing_email.scalars().first():
-            raise HTTPException(status_code=400, detail=f"Email {email_value} already registered")
-    
-    # Check if roll_no already exists
-    existing_roll = await db.execute(select(StudentProfile).where(StudentProfile.roll_no == request.roll_no))
-    if existing_roll.scalars().first():
-        raise HTTPException(status_code=400, detail=f"Roll number {request.roll_no} already registered")
-    
-    try:
-        # Create User record
-        user_id = str(uuid.uuid4())
-        new_user = User(
-            id=user_id,
-            phone=request.phone,
-            email=email_value,
-            password_hash=hash_password(request.password),
-            role='teacher',
-            is_active=True,
-            profile_completed=True
-        )
-        db.add(new_user)
-        await db.flush()
-        
-        # Create StudentProfile record (used for all roles including teachers)
-        new_profile = StudentProfile(
-            user_id=user_id,
-            name=request.name,
-            roll_no=request.roll_no,
-            school_name=request.school_name.strip(),
-            standard=None,  # Teachers don't have a standard
-            gender=request.gender or 'other',
-            login_phone=request.phone,
-            parent_phone=request.parent_phone or request.phone
-        )
-        db.add(new_profile)
-        
-        await db.commit()
-        
-        logger.info(f"✅ Teacher registered: {request.name} from {request.school_name}")
-        
-        return {
-            "message": "Teacher registered successfully. You can now login with your roll number and password.",
-            "user": {
-                "id": user_id,
-                "name": request.name,
-                "roll_no": request.roll_no,
-                "school_name": request.school_name,
-                "role": "teacher"
-            }
-        }
-        
-    except Exception as e:
-        await db.rollback()
-        logger.error(f"Teacher registration failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
-
-@router.post("/auth/request-reset-otp")
-async def request_password_reset_otp(
-    request: RequestPasswordResetOTPRequest,
-    db: AsyncSession = Depends(get_db)
-):
-    """Request OTP for password reset (sent to registered phone)"""
-    # Find user by roll_no
-    profile_result = await db.execute(
-        select(StudentProfile).where(StudentProfile.roll_no == request.roll_no)
-    )
-    profile = profile_result.scalars().first()
-    
-    if not profile:
-        raise HTTPException(status_code=404, detail="Roll number not found")
-    
-    # Get the user
-    user_result = await db.execute(select(User).where(User.id == profile.user_id))
-    user = user_result.scalars().first()
-    
-    if not user:
-        raise HTTPException(status_code=404, detail="User account not found")
-    
-    # Generate OTP (in production, send via SMS)
-    otp = "123456"  # For testing - in production use: str(random.randint(100000, 999999))
-    
-    # Store OTP (in production, use Redis with expiry)
-    OTP_STORE[request.roll_no] = {
-        "otp": otp,
-        "user_id": str(user.id),
-        "purpose": "password_reset"
-    }
-    
-    logger.info(f"📱 Password reset OTP generated for: {profile.name} (Roll: {request.roll_no})")
-    
-    # In production, send SMS here
-    # For now, return success (OTP is 123456 for testing)
-    phone_masked = user.phone[-4:] if user.phone else "****"
-    
-    return {
-        "message": f"OTP sent to phone ending in {phone_masked}",
-        "roll_no": request.roll_no,
-        "name": profile.name
-    }
-
-@router.post("/auth/reset-password")
-async def user_reset_password(
-    request: UserResetPasswordRequest,
-    db: AsyncSession = Depends(get_db)
-):
-    """Reset password using old password and OTP verification"""
-    # Find user by roll_no
-    profile_result = await db.execute(
-        select(StudentProfile).where(StudentProfile.roll_no == request.roll_no)
-    )
-    profile = profile_result.scalars().first()
-    
-    if not profile:
-        raise HTTPException(status_code=404, detail="Roll number not found")
-    
-    # Get the user
-    user_result = await db.execute(select(User).where(User.id == profile.user_id))
-    user = user_result.scalars().first()
-    
-    if not user:
-        raise HTTPException(status_code=404, detail="User account not found")
-    
-    # Verify old password
-    if not user.password_hash or not verify_password(request.old_password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Current password is incorrect")
-    
-    # Verify OTP
-    stored_otp = OTP_STORE.get(request.roll_no)
-    if not stored_otp or stored_otp.get("otp") != request.otp:
-        raise HTTPException(status_code=401, detail="Invalid or expired OTP")
-    
-    if stored_otp.get("purpose") != "password_reset":
-        raise HTTPException(status_code=401, detail="Invalid OTP for this operation")
-    
-    # Update password
-    user.password_hash = hash_password(request.new_password)
-    await db.commit()
-    
-    # Clear OTP
-    if request.roll_no in OTP_STORE:
-        del OTP_STORE[request.roll_no]
-    
-    logger.info(f"🔑 User reset password: {profile.name} (Roll: {request.roll_no})")
-    
-    return {
-        "message": "Password reset successfully",
-        "roll_no": request.roll_no
-    }
 
 # =============================================================================
 # STUDENT PROFILE ROUTES

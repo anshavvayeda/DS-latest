@@ -133,6 +133,13 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - Frontend: `StructuredHomeworkCreator.jsx` (teacher), `StudentAIHomework.jsx` (student solver)
 - Question types: MCQ, true/false, fill blank, one word, match following, short/long answer, numerical
 
+### Auth Cleanup (Complete - Mar 17, 2026)
+- Removed "Register as Teacher" link and form from login page — teachers are now only registered by admin
+- Replaced forgot password OTP flow with "Contact your admin" message
+- Removed backend OTP endpoints: /auth/send-otp, /auth/verify-otp, /auth/register-teacher, /auth/request-reset-otp, /auth/reset-password
+- Removed OTP_STORE from deps.py
+- Login page is now clean: Roll Number, Password, Login, Forgot Password (contact admin), Admin Login
+
 ### Flashcard Improvements (Complete - Mar 17, 2026)
 - Updated flashcard generation prompts across all 3 generation functions (ai_orchestrator_v2, ai_service generate_flashcards, ai_service generate_flashcards_atomic) to strictly enforce 1-2 word answers only
 - Prompt now explicitly forbids definitions, descriptions, and long answers on the back side

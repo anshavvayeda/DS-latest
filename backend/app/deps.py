@@ -18,9 +18,6 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 
-# Global OTP store (in production, use Redis with TTL)
-OTP_STORE = {}
-
 
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
