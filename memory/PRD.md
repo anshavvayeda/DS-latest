@@ -212,6 +212,18 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - Removed `MOCK_OTP_MODE` and `MOCK_OTP_VALUE` from backend .env
 - All logins (teacher, student, admin) verified working after cleanup
 
+### WhatsApp Parent Chatbot (Complete - Mar 17, 2026)
+- Meta WhatsApp Business API integration for parent-student performance queries
+- GPT-4o via OpenRouter generates contextual, warm responses using student data
+- PostgreSQL chat memory with 20-message sliding window per phone number
+- New DB tables: `whatsapp_parent_briefs` (cached performance data), `whatsapp_chat_memory`
+- Performance aggregation: test scores, missed homework, strong/weak subjects, class rank, homework completion rate
+- Phone number matching with country code handling (with/without 91 prefix)
+- Public token-based parent dashboard (server-rendered HTML, no login required)
+- Webhook endpoints: GET for Meta verification, POST for message processing
+- Fallback summary if LLM fails
+- Testing: 18/18 backend tests passed (100%)
+
 ### Other Completed Work
 - Branding/UI overhaul, bug fixes, CI/CD pipeline, documentation
 
