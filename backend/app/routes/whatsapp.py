@@ -128,7 +128,7 @@ async def _process_message(phone: str, user_message: str):
 # STUDENT IDENTIFICATION
 # =============================================================================
 async def _find_student_by_parent_phone(db: AsyncSession, phone: str):
-    """Find student profile by parent's phone number"""
+    """Find student profile by parent's phone number only (not login_phone)"""
     # Try matching with various formats
     phone_variants = [phone]
     if phone.startswith("91") and len(phone) > 10:
@@ -138,16 +138,10 @@ async def _find_student_by_parent_phone(db: AsyncSession, phone: str):
 
     for p in phone_variants:
         result = await db.execute(
-            select(StudentProfile).where(StudentProfile.parent_phone == p)
-        )
-        profile = result.scalars().first()
-        if profile:
-            return profile
-
-    # Also try login_phone as fallback
-    for p in phone_variants:
-        result = await db.execute(
-            select(StudentProfile).where(StudentProfile.login_phone == p)
+            select(StudentProfile).where(
+                StudentProfile.parent_phone == p,
+                StudentProfile.standard.isnot(None)  # Only students have a standard
+            )
         )
         profile = result.scalars().first()
         if profile:
