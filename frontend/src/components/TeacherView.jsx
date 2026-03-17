@@ -92,6 +92,128 @@ function TeacherAITestsList({ subjectId, standard }) {
   );
 }
 
+function TeacherAIHomeworkList({ subjectId, standard }) {
+  const [homeworks, setHomeworks] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [viewSubmissions, setViewSubmissions] = React.useState(null);
+  const [submissions, setSubmissions] = React.useState([]);
+
+  const loadHomeworks = React.useCallback(() => {
+    if (!subjectId || !standard) return;
+    setLoading(true);
+    axios.get(`${API}/structured-homework/list/${subjectId}/${standard}`, { withCredentials: true })
+      .then(res => setHomeworks(res.data?.homework || []))
+      .catch(() => setHomeworks([]))
+      .finally(() => setLoading(false));
+  }, [subjectId, standard]);
+
+  React.useEffect(() => { loadHomeworks(); }, [loadHomeworks]);
+
+  const loadSubmissions = async (hwId) => {
+    try {
+      const res = await axios.get(`${API}/structured-homework/${hwId}/submissions`, { withCredentials: true });
+      setSubmissions(res.data || []);
+      setViewSubmissions(hwId);
+    } catch { setSubmissions([]); }
+  };
+
+  const deleteHomework = async (hwId, title) => {
+    if (!window.confirm(`Delete homework: ${title}?`)) return;
+    try {
+      await axios.delete(`${API}/structured-homework/${hwId}`, { withCredentials: true });
+      loadHomeworks();
+    } catch (err) {
+      alert('Failed to delete: ' + (err.response?.data?.detail || err.message));
+    }
+  };
+
+  if (loading) return <div style={{ color: '#94a3b8', padding: '12px 0', fontSize: 14 }}>Loading AI homework...</div>;
+  if (homeworks.length === 0) return null;
+
+  if (viewSubmissions) {
+    const hw = homeworks.find(h => h.id === viewSubmissions);
+    return (
+      <div data-testid="hw-submissions-view">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <button onClick={() => setViewSubmissions(null)} style={{ background: '#334155', color: '#F8FAFC', border: 'none', padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>Back</button>
+          <h4 style={{ color: '#F8FAFC', margin: 0 }}>{hw?.title} — Submissions</h4>
+        </div>
+        {submissions.length === 0 ? (
+          <p style={{ color: '#94a3b8', fontSize: 14 }}>No submissions yet.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {submissions.map(s => (
+              <div key={s.id} style={{ background: 'rgba(72,187,120,0.08)', border: '1px solid rgba(72,187,120,0.2)', borderRadius: 8, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span style={{ color: '#F8FAFC', fontWeight: 600, fontSize: 14 }}>{s.roll_no}</span>
+                  <span style={{ color: '#94a3b8', fontSize: 13, marginLeft: 12 }}>{s.questions_attempted || 0} answered</span>
+                  <span style={{ color: '#94a3b8', fontSize: 13, marginLeft: 12 }}>{s.hints_used || 0} hints used</span>
+                </div>
+                <span style={{
+                  fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 10,
+                  background: s.completed ? 'rgba(34,197,94,0.2)' : 'rgba(251,191,36,0.2)',
+                  color: s.completed ? '#22c55e' : '#fbbf24',
+                }}>{s.completed ? 'Completed' : 'In Progress'}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ marginBottom: 24 }} data-testid="teacher-ai-homework-list">
+      <h4 style={{ color: '#86efac', fontSize: 14, fontWeight: 600, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        Published AI Homework
+      </h4>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {homeworks.map(h => (
+          <div key={h.id} data-testid={`teacher-ai-hw-${h.id}`} style={{
+            background: 'rgba(72,187,120,0.1)',
+            border: '1px solid rgba(72,187,120,0.3)',
+            borderRadius: 10,
+            padding: '14px 18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span style={{ background: 'linear-gradient(135deg,#48bb78,#38a169)', padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700, color: '#fff' }}>AI</span>
+                <span style={{ fontSize: 15, fontWeight: 600, color: '#F8FAFC' }}>{h.title}</span>
+                <span style={{
+                  fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 10,
+                  background: h.status === 'active' ? 'rgba(34,197,94,0.2)' : 'rgba(148,163,184,0.2)',
+                  color: h.status === 'active' ? '#22c55e' : '#94a3b8',
+                }}>{h.status === 'active' ? 'Active' : 'Expired'}</span>
+              </div>
+              <div style={{ fontSize: 13, color: '#94a3b8', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                <span>{h.question_count} questions</span>
+                {h.deadline && <span>Deadline: {new Date(h.deadline).toLocaleDateString()}</span>}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => loadSubmissions(h.id)}
+                data-testid={`hw-submissions-btn-${h.id}`}
+                style={{ background: 'linear-gradient(135deg,#48bb78,#38a169)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+              >View Submissions</button>
+              <button
+                onClick={() => deleteHomework(h.id, h.title)}
+                data-testid={`hw-delete-btn-${h.id}`}
+                style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #475569', padding: '8px 12px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
+              >Delete</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function TeacherView({ user, language }) {
   const [standard, setStandard] = useState(null); // NEW: Standard selection
   const [subjects, setSubjects] = useState([]);
@@ -1148,6 +1270,7 @@ function TeacherView({ user, language }) {
                  + Create AI Homework
                </button>
              </div>
+             <TeacherAIHomeworkList subjectId={selectedSubject.id} standard={standard} />
              <TestManagement
                subjectId={selectedSubject.id}
                standard={standard}

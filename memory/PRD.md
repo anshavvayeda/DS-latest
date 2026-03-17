@@ -133,6 +133,13 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - Frontend: `StructuredHomeworkCreator.jsx` (teacher), `StudentAIHomework.jsx` (student solver)
 - Question types: MCQ, true/false, fill blank, one word, match following, short/long answer, numerical
 
+### Teacher AI Homework Visibility + Parent Dashboard (Complete - Mar 17, 2026)
+- Added `TeacherAIHomeworkList` component to teacher's Homework tab — shows all published AI homework with title, status badge, question count, deadline, and View Submissions/Delete buttons
+- View Submissions shows per-student: roll number, questions attempted, hints used, and completion status
+- Updated parent dashboard backend to include AI homework stats alongside PDF homework
+- Parent dashboard now shows combined homework completion (PDF + AI), with AI homework items tagged as `[ai]` in missed homework list
+- New fields in parent API response: `ai_homework`, `ai_homework_completed` per subject
+
 ### Auth Cleanup (Complete - Mar 17, 2026)
 - Removed "Register as Teacher" link and form from login page — teachers are now only registered by admin
 - Replaced forgot password OTP flow with "Contact your admin" message

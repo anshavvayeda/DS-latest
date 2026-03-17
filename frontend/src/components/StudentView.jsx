@@ -810,60 +810,69 @@ function StudentView({ user, language, isTeacherPreview = false }) {
           {/* AI Homework Section */}
           {aiHomeworkList.length > 0 && (
             <div style={{ marginTop: '20px' }}>
-              <h4 style={{ color: 'rgba(255,255,255,0.9)', marginBottom: '12px', fontSize: '15px' }}>AI Homework</h4>
-              <div className="homework-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' }}>
+              <h4 style={{ color: '#86efac', marginBottom: '12px', fontSize: '14px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid rgba(72,187,120,0.3)', paddingBottom: 8 }}>AI Homework</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {aiHomeworkList.map((hw) => (
                   <div
                     key={hw.id}
-                    className="homework-card"
                     data-testid={`ai-homework-${hw.id}`}
                     onClick={() => !hw.completed && setSelectedAIHomework(hw)}
                     style={{
+                      background: '#1e293b',
+                      border: '1px solid #334155',
                       borderRadius: '12px',
-                      padding: '20px',
-                      color: 'white',
-                      boxShadow: '0 4px 15px rgba(72, 187, 120, 0.3)',
+                      padding: '16px 20px',
                       cursor: hw.completed ? 'default' : 'pointer',
-                      opacity: hw.completed ? 0.7 : 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 12,
+                      flexWrap: 'wrap',
+                      transition: 'border-color 0.2s',
                     }}
+                    onMouseEnter={e => { if (!hw.completed) e.currentTarget.style.borderColor = '#48bb78'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#334155'; }}
                   >
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>{hw.title}</h4>
-                    <p style={{ margin: '5px 0', fontSize: '13px', opacity: '0.9' }}>
-                      {hw.question_count} questions
-                    </p>
-                    {hw.deadline && (
-                      <p style={{ margin: '5px 0', fontSize: '13px', opacity: '0.9' }}>
-                        Due: {new Date(hw.deadline).toLocaleDateString()}
-                      </p>
-                    )}
-                    <div style={{ marginTop: '12px' }}>
+                    <div style={{ flex: 1, minWidth: 180 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <span style={{ background: 'linear-gradient(135deg,#48bb78,#38a169)', padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700, color: '#fff' }}>AI</span>
+                        <span style={{ fontSize: 15, fontWeight: 600, color: '#F8FAFC' }}>{hw.title}</span>
+                      </div>
+                      <div style={{ fontSize: 13, color: '#94a3b8', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                        <span>{hw.question_count} question{hw.question_count > 1 ? 's' : ''}</span>
+                        {hw.deadline && <span>Due: {new Date(hw.deadline).toLocaleDateString()}</span>}
+                      </div>
+                    </div>
+                    <div>
                       {hw.completed ? (
                         <span style={{
-                          background: 'rgba(72, 187, 120, 0.2)',
-                          color: '#48bb78',
-                          padding: '6px 14px',
+                          background: 'rgba(34,197,94,0.15)',
+                          color: '#4ade80',
+                          padding: '6px 16px',
                           borderRadius: '20px',
                           fontSize: '13px',
                           fontWeight: 600,
+                          border: '1px solid rgba(34,197,94,0.3)',
                         }} data-testid={`ai-hw-completed-${hw.id}`}>
                           Completed
                         </span>
                       ) : hw.started ? (
                         <span style={{
-                          background: 'rgba(251, 191, 36, 0.2)',
+                          background: 'rgba(251,191,36,0.15)',
                           color: '#fbbf24',
-                          padding: '6px 14px',
+                          padding: '6px 16px',
                           borderRadius: '20px',
                           fontSize: '13px',
                           fontWeight: 600,
+                          border: '1px solid rgba(251,191,36,0.3)',
                         }}>
-                          In Progress
+                          Continue
                         </span>
                       ) : (
                         <span style={{
-                          background: 'rgba(99, 102, 241, 0.2)',
-                          color: '#818cf8',
-                          padding: '6px 14px',
+                          background: 'linear-gradient(135deg,#48bb78,#38a169)',
+                          color: '#fff',
+                          padding: '8px 20px',
                           borderRadius: '20px',
                           fontSize: '13px',
                           fontWeight: 600,
