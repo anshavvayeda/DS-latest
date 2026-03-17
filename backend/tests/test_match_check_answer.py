@@ -13,7 +13,7 @@ import requests
 import os
 import json
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://homework-ui-sync.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://adaptive-classroom-5.preview.emergentagent.com')
 
 # Test credentials
 TEACHER_CREDENTIALS = {"roll_no": "teacher4", "password": "Test@123"}

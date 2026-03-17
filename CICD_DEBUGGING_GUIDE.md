@@ -5,7 +5,7 @@
 ✅ **Application Setup**: Complete and running
 - Backend: Running on port 8001 (database connected)
 - Frontend: Running on port 3000 (webpack compiled)
-- API responding: https://homework-ui-sync.preview.emergentagent.com/api/
+- API responding: https://adaptive-classroom-5.preview.emergentagent.com/api/
 
 ⚠️ **CI/CD Pipeline**: Needs debugging
 - Issue: GitHub Actions deployment to EC2 failing

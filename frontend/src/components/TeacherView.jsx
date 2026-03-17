@@ -989,98 +989,22 @@ function TeacherView({ user, language }) {
           </div>
         </div>
 
-        {/* NEW: Tabs for Chapters, Homework, Tests, and PYQs */}
-        <div style={{ display: 'flex', marginTop: '20px', marginBottom: '20px', borderBottom: '2px solid rgba(255, 255, 255, 0.1)', width: '100%' }}>
-          <button 
-            onClick={() => setActiveTab('chapters')}
-            style={{
-              flex: 1,
-              padding: '12px 10px',
-              border: 'none',
-              background: activeTab === 'chapters' ? 'rgba(79, 70, 229, 0.9)' : 'transparent',
-              color: '#F8FAFC',
-              cursor: 'pointer',
-              borderRadius: '8px 8px 0 0',
-              fontWeight: '700',
-              fontFamily: 'Outfit, sans-serif',
-              fontSize: '22px',
-              textAlign: 'center'
-            }}
-          >
+        {/* Tabs for Chapters, Homework, Tests, and PYQs */}
+        <div className="teacher-tabs" data-testid="teacher-tabs">
+          <button className={`teacher-tab ${activeTab === 'chapters' ? 'active' : ''}`} onClick={() => setActiveTab('chapters')}>
             Chapters
           </button>
-          <button 
-            onClick={() => setActiveTab('homework')}
-            style={{
-              flex: 1,
-              padding: '12px 10px',
-              border: 'none',
-              background: activeTab === 'homework' ? 'rgba(79, 70, 229, 0.9)' : 'transparent',
-              color: '#F8FAFC',
-              cursor: 'pointer',
-              borderRadius: '8px 8px 0 0',
-              fontWeight: '700',
-              fontFamily: 'Outfit, sans-serif',
-              fontSize: '22px',
-              textAlign: 'center'
-            }}
-          >
+          <button className={`teacher-tab ${activeTab === 'homework' ? 'active' : ''}`} onClick={() => setActiveTab('homework')}>
             Homework
           </button>
-          <button 
-            onClick={() => setActiveTab('tests')}
-            style={{
-              flex: 1,
-              padding: '12px 10px',
-              border: 'none',
-              background: activeTab === 'tests' ? 'rgba(79, 70, 229, 0.9)' : 'transparent',
-              color: '#F8FAFC',
-              cursor: 'pointer',
-              borderRadius: '8px 8px 0 0',
-              fontWeight: '700',
-              fontFamily: 'Outfit, sans-serif',
-              fontSize: '22px',
-              textAlign: 'center'
-            }}
-          >
+          <button className={`teacher-tab ${activeTab === 'tests' ? 'active' : ''}`} onClick={() => setActiveTab('tests')}>
             Create Test
           </button>
-          <button 
-            onClick={() => setActiveTab('pyqs')}
-            style={{
-              flex: 1,
-              padding: '12px 10px',
-              border: 'none',
-              background: activeTab === 'pyqs' ? 'rgba(79, 70, 229, 0.9)' : 'transparent',
-              color: '#F8FAFC',
-              cursor: 'pointer',
-              borderRadius: '8px 8px 0 0',
-              fontWeight: '700',
-              fontFamily: 'Outfit, sans-serif',
-              fontSize: '22px',
-              textAlign: 'center'
-            }}
-          >
-            Previous Year Papers
+          <button className={`teacher-tab ${activeTab === 'pyqs' ? 'active' : ''}`} onClick={() => setActiveTab('pyqs')}>
+            PYQ Papers
           </button>
-          <button 
-            onClick={() => setActiveTab('upload')}
-            data-testid="upload-content-tab"
-            style={{
-              flex: 1,
-              padding: '12px 10px',
-              border: 'none',
-              background: activeTab === 'upload' ? 'rgba(79, 70, 229, 0.9)' : 'transparent',
-              color: '#F8FAFC',
-              cursor: 'pointer',
-              borderRadius: '8px 8px 0 0',
-              fontWeight: '700',
-              fontFamily: 'Outfit, sans-serif',
-              fontSize: '22px',
-              textAlign: 'center'
-            }}
-          >
-            Generate AI Content
+          <button className={`teacher-tab ${activeTab === 'upload' ? 'active' : ''}`} onClick={() => setActiveTab('upload')} data-testid="upload-content-tab">
+            AI Content
           </button>
         </div>
 

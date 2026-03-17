@@ -1098,15 +1098,43 @@
 
   .overall-stats-dark {
     grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .stat-box-dark {
+    padding: 12px 10px;
+  }
+  .stat-value-dark {
+    font-size: 1.4rem;
   }
 
   .subjects-grid-dark {
     grid-template-columns: 1fr;
   }
 
+  .classification-legend-dark {
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+  }
+
   .missed-homework-item-dark {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .subject-card-dark {
+    padding: 14px;
+  }
+
+  .subject-stats-row-dark {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .fullpage-header {
+    flex-wrap: wrap;
+    gap: 8px;
   }
 }
 

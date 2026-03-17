@@ -837,7 +837,7 @@ function StudentView({ user, language, isTeacherPreview = false }) {
               <h4 style={{ color: '#c4b5fd', fontSize: '14px', fontWeight: 600, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 AI-Evaluated Tests
               </h4>
-              <div className="tests-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' }}>
+              <div className="tests-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '15px' }}>
                 {aiTestList.map((aiTest) => (
                   <div 
                     key={aiTest.id} 

@@ -13,7 +13,7 @@ import os
 import uuid
 
 # Use the public URL for testing
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://homework-ui-sync.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://adaptive-classroom-5.preview.emergentagent.com')
 API_BASE = f"{BASE_URL}/api"
 
 # Admin credentials
