@@ -163,9 +163,11 @@ from app.routes.content import router as content_router
 from app.routes.parent_teacher import router as parent_teacher_router
 from app.routes.structured_tests import router as structured_tests_router
 from app.routes.structured_homework import router as structured_homework_router
+from app.routes.whatsapp import router as whatsapp_router
 
 app.include_router(auth_router, prefix="/api")
 app.include_router(content_router, prefix="/api")
 app.include_router(parent_teacher_router, prefix="/api")
 app.include_router(structured_tests_router, prefix="/api")
 app.include_router(structured_homework_router, prefix="/api")
+app.include_router(whatsapp_router, prefix="/api")

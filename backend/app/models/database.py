@@ -886,6 +886,41 @@ class StructuredHomeworkSubmission(Base):
     )
 
 
+class WhatsappParentBrief(Base):
+    """Cached performance brief per parent phone number"""
+    __tablename__ = "whatsapp_parent_briefs"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    phone_number = Column(String(20), unique=True, nullable=False, index=True)
+    student_id = Column(String(36), ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    student_name = Column(String(255), nullable=True)
+    roll_no = Column(String(50), nullable=True)
+    standard = Column(Integer, nullable=True)
+    brief_data = Column(JSON, nullable=True)
+    dashboard_token = Column(String(64), unique=True, nullable=False, index=True)
+    last_updated = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        Index('idx_wpb_phone', 'phone_number'),
+        Index('idx_wpb_token', 'dashboard_token'),
+    )
+
+
+class WhatsappChatMemory(Base):
+    """Chat memory for WhatsApp conversations (20 messages per phone)"""
+    __tablename__ = "whatsapp_chat_memory"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    phone_number = Column(String(20), nullable=False, index=True)
+    role = Column(String(10), nullable=False)  # 'user' or 'assistant'
+    message = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        Index('idx_wcm_phone_time', 'phone_number', 'created_at'),
+    )
+
+
 
 async def init_db():
     """
