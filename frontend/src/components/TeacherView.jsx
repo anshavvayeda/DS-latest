@@ -47,12 +47,11 @@ function TeacherAITestsList({ subjectId, standard }) {
             borderRadius: 10,
             padding: '14px 18px',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
+            flexDirection: 'column',
+            gap: 10,
           }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
                 <span style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)', padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700, color: '#fff' }}>AI</span>
                 <span style={{ fontSize: 15, fontWeight: 600, color: '#F8FAFC' }}>{t.title}</span>
                 <span style={{
@@ -60,7 +59,7 @@ function TeacherAITestsList({ subjectId, standard }) {
                   background: 'rgba(34,197,94,0.2)', color: '#22c55e',
                 }}>Published</span>
               </div>
-              <div style={{ fontSize: 13, color: '#94a3b8', display: 'flex', gap: 16 }}>
+              <div style={{ fontSize: 13, color: '#94a3b8', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 <span>{t.question_count} questions</span>
                 <span>{t.total_marks} marks</span>
                 <span>{t.duration_minutes} min</span>
@@ -79,7 +78,7 @@ function TeacherAITestsList({ subjectId, standard }) {
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: 'pointer',
-                whiteSpace: 'nowrap',
+                alignSelf: 'flex-start',
               }}
             >
               Review Submissions
@@ -174,13 +173,11 @@ function TeacherAIHomeworkList({ subjectId, standard }) {
             borderRadius: 10,
             padding: '14px 18px',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-            flexWrap: 'wrap',
+            flexDirection: 'column',
+            gap: 10,
           }}>
-            <div style={{ flex: 1, minWidth: 200 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
                 <span style={{ background: 'linear-gradient(135deg,#48bb78,#38a169)', padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700, color: '#fff' }}>AI</span>
                 <span style={{ fontSize: 15, fontWeight: 600, color: '#F8FAFC' }}>{h.title}</span>
                 <span style={{
@@ -189,7 +186,7 @@ function TeacherAIHomeworkList({ subjectId, standard }) {
                   color: h.status === 'active' ? '#22c55e' : '#94a3b8',
                 }}>{h.status === 'active' ? 'Active' : 'Expired'}</span>
               </div>
-              <div style={{ fontSize: 13, color: '#94a3b8', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <div style={{ fontSize: 13, color: '#94a3b8', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 <span>{h.question_count} questions</span>
                 {h.deadline && <span>Deadline: {new Date(h.deadline).toLocaleDateString()}</span>}
               </div>

@@ -2825,6 +2825,13 @@ body {
   .app-header { padding: 8px 12px; }
 }
 
+/* Hide language toggle on mobile */
+@media (max-width: 768px) {
+  .language-toggle-btn {
+    display: none !important;
+  }
+}
+
 /* ================================================================
    TEACHER TABS
    ================================================================ */

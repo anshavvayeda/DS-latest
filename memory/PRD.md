@@ -201,6 +201,9 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - Teacher tabs stack vertically on mobile, subject cards use single column layout
 - No horizontal overflow on any page at 375px viewport width
 - Verified by testing agent: 8/8 mobile responsiveness tests passed (100%)
+- **Gujarati language button**: Hidden on mobile (display:none at max-width:768px), visible on desktop
+- **AI Test/Homework cards (teacher)**: Changed from horizontal flex-row to vertical flex-column layout for mobile
+- **Flashcard mobile display**: Card height auto-sizes on mobile (no fixed 300px), "Click to reveal" text uses relative positioning instead of absolute to avoid overlap, font sizes reduced for mobile readability
 
 ### OTP Dead Code Cleanup (Complete - Mar 17, 2026)
 - Removed all dead OTP-related code: `SendOTPRequest`, `VerifyOTPRequest`, `UserResetPasswordRequest`, `RequestPasswordResetOTPRequest` schemas

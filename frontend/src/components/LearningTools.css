@@ -626,6 +626,81 @@
   background: #5a67d8;
 }
 
+/* Flashcard Mobile Responsiveness */
+@media (max-width: 768px) {
+  .flashcard {
+    height: auto;
+    min-height: 250px;
+  }
+  .flashcard-inner {
+    position: relative;
+    min-height: 250px;
+  }
+  .flashcard-front,
+  .flashcard-back {
+    position: relative;
+    min-height: 250px;
+    height: auto;
+    padding: 24px 16px 40px;
+  }
+  .flashcard.flipped .flashcard-front {
+    display: none;
+  }
+  .flashcard:not(.flipped) .flashcard-back {
+    display: none;
+  }
+  .flashcard.flipped .flashcard-back {
+    display: flex;
+  }
+  .flashcard-front .card-content,
+  .flashcard-front .formatted-content,
+  .flashcard-front .formatted-content p,
+  .flashcard-front .formatted-content span,
+  .flashcard-front .formatted-content div {
+    font-size: 20px !important;
+  }
+  .flashcard-back .card-content,
+  .flashcard-back .formatted-content,
+  .flashcard-back .formatted-content p,
+  .flashcard-back .formatted-content span,
+  .flashcard-back .formatted-content div {
+    font-size: 18px !important;
+  }
+  .flashcard-front .card-category {
+    margin-bottom: 12px;
+    font-size: 12px !important;
+    padding: 6px 14px !important;
+  }
+  .flashcard-back .card-hint {
+    font-size: 13px !important;
+    margin-top: 12px;
+    padding: 8px 12px;
+  }
+  .flip-hint {
+    position: relative;
+    bottom: auto;
+    margin-top: 16px;
+  }
+  .flashcards-container {
+    max-width: 100%;
+    padding: 0 4px;
+  }
+  .flashcards-stats {
+    gap: 10px;
+  }
+  .stat-item {
+    padding: 8px 12px;
+  }
+  .rating-btn {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  .nav-btn {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
+}
+
 /* Quiz Styles */
 .quiz-container {
   max-width: 700px;
