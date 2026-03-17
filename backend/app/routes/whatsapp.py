@@ -161,11 +161,11 @@ async def _get_or_refresh_brief(db: AsyncSession, phone: str, profile: StudentPr
     )
     brief = result.scalars().first()
 
-    # Refresh if older than 1 hour or doesn't exist
+    # Refresh if older than 24 hours or doesn't exist
     should_refresh = (
         not brief
         or not brief.brief_data
-        or (datetime.now(timezone.utc) - brief.last_updated) > timedelta(hours=1)
+        or (datetime.now(timezone.utc) - brief.last_updated) > timedelta(hours=24)
     )
 
     if should_refresh:
