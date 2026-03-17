@@ -855,6 +855,64 @@ function TeacherView({ user, language }) {
                   + Add Subject
                 </button>
               </div>
+
+              {/* Subject list with delete buttons */}
+              {subjects.length > 0 && (
+                <div style={{ marginTop: '20px', display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
+                  {subjects.map(subject => (
+                    <div
+                      key={subject.id}
+                      data-testid={`subject-chip-${subject.id}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 12px 8px 16px',
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        borderRadius: '24px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      <span
+                        onClick={() => loadChapters(subject)}
+                        style={{
+                          color: '#F8FAFC',
+                          fontFamily: "'Outfit', sans-serif",
+                          fontSize: '14px',
+                          fontWeight: '600',
+                        }}
+                      >
+                        {subject.name}
+                      </span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); deleteSubject(subject.id, subject.name); }}
+                        data-testid={`delete-subject-${subject.id}`}
+                        title={`Remove ${subject.name}`}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#94a3b8',
+                          cursor: 'pointer',
+                          fontSize: '16px',
+                          lineHeight: '1',
+                          padding: '2px 4px',
+                          borderRadius: '50%',
+                          transition: 'all 0.2s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                        onMouseEnter={(e) => { e.target.style.color = '#ef4444'; e.target.style.background = 'rgba(239,68,68,0.15)'; }}
+                        onMouseLeave={(e) => { e.target.style.color = '#94a3b8'; e.target.style.background = 'transparent'; }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
               
               {/* Add Subject Modal */}
               {showAddSubject && (
