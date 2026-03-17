@@ -6,7 +6,6 @@ import {
   translateText, translateBatch, translateContent, extractErrorMessage
 } from '@/utils/helpers';
 import ToolContentDisplay from '@/components/ToolContentDisplay';
-import HomeworkAnswering from '@/components/HomeworkAnswering';
 import StudentAITest from '@/components/StudentAITest';
 import StudentAIHomework from '@/components/StudentAIHomework';
 import StudentPerformanceDashboard from '@/components/StudentPerformanceDashboard';
@@ -36,18 +35,12 @@ function StudentView({ user, language, isTeacherPreview = false }) {
   const [translatedUI, setTranslatedUI] = useState({});
   const [translatingPage, setTranslatingPage] = useState(false);
   
-  // Homework and Study Materials states
-  const [homeworkList, setHomeworkList] = useState([]);
-  const [selectedHomework, setSelectedHomework] = useState(null);
-  const [homeworkSolution, setHomeworkSolution] = useState(null);
-  const [homeworkLoading, setHomeworkLoading] = useState(false);
-  const [studyMaterials, setStudyMaterials] = useState([]);
-  
   // AI-Evaluated (Structured) Test states
   const [aiTestList, setAiTestList] = useState([]);
   const [selectedAITest, setSelectedAITest] = useState(null);
   const [selectedAIHomework, setSelectedAIHomework] = useState(null);
   const [aiHomeworkList, setAiHomeworkList] = useState([]);
+  const [studyMaterials, setStudyMaterials] = useState([]);
   const [showPerformanceDashboard, setShowPerformanceDashboard] = useState(false);
   
   // Student classification for quiz filtering
@@ -286,10 +279,9 @@ function StudentView({ user, language, isTeacherPreview = false }) {
     try {
       // Load ALL data in parallel for speed
       
-      const [chaptersRes, pyqsRes, homeworkRes, aiTestsRes, aiHwRes] = await Promise.allSettled([
+      const [chaptersRes, pyqsRes, aiTestsRes, aiHwRes] = await Promise.allSettled([
         axios.get(`${API}/subjects/${subject.id}/chapters`),
         axios.get(`${API}/subjects/${subject.id}/pyqs?standard=${standard}`),
-        axios.get(`${API}/homework?standard=${standard}&subject_id=${subject.id}`, { withCredentials: true }),
         axios.get(`${API}/structured-tests/list/${subject.id}/${standard}`, { withCredentials: true }),
         axios.get(`${API}/structured-homework/list/${subject.id}/${standard}`, { withCredentials: true }),
       ]);
@@ -309,9 +301,6 @@ function StudentView({ user, language, isTeacherPreview = false }) {
       
       // Process PYQs
       setPyqs(pyqsRes.status === 'fulfilled' ? pyqsRes.value.data : []);
-      
-      // Process homework
-      setHomeworkList(homeworkRes.status === 'fulfilled' ? homeworkRes.value.data : []);
       
       // Process AI tests
       const aiTestsData = aiTestsRes.status === 'fulfilled' ? aiTestsRes.value.data : [];
@@ -338,13 +327,6 @@ function StudentView({ user, language, isTeacherPreview = false }) {
     }
   };
   
-  // Open homework for answering
-  const openHomework = (homework) => {
-    setSelectedHomework(homework);
-    setFrequentPYQsData(null);  // Clear frequent PYQs data
-    setShowFrequentPYQs(false);
-  };
-
   const selectContentSource = async (source) => {
     setContentSource(source);
     setLearningMode(null);
@@ -632,7 +614,7 @@ function StudentView({ user, language, isTeacherPreview = false }) {
   }
 
   // Step 3: Two Column Layout - Chapters and PYQs
-  if (!selectedChapter && !selectedPYQ && !selectedHomework && !selectedAITest && !selectedAIHomework) {
+  if (!selectedChapter && !selectedPYQ && !selectedAITest && !selectedAIHomework) {
     return (
       <div className="student-view">
         {isTeacherPreview && (
@@ -735,83 +717,9 @@ function StudentView({ user, language, isTeacherPreview = false }) {
         
         {/* Homework Section */}
         <div className="homework-section" style={{ marginTop: '30px' }}>
-          <h3 className="section-header">📝 {t('Homework')}</h3>
-          {homeworkList.length > 0 ? (
-            <div className="homework-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' }}>
-              {homeworkList.map((hw) => (
-                <div 
-                  key={hw.id} 
-                  className="homework-card"
-                  data-testid={`homework-${hw.id}`}
-                  style={{ 
-                    borderRadius: '12px',
-                    padding: '20px',
-                    color: 'white',
-                    boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)'
-                  }}
-                >
-                  <h4 style={{ margin: '0 0 10px 0', fontSize: '16px' }}>📄 {hw.title}</h4>
-                  <p style={{ margin: '5px 0', fontSize: '13px', opacity: '0.9' }}>
-                    📅 Due: {new Date(hw.expiry_date).toLocaleDateString()}
-                  </p>
-                  <p style={{ margin: '5px 0', fontSize: '12px', opacity: '0.8' }}>
-                    {hw.file_name}
-                  </p>
-                  <div style={{ marginTop: '15px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    <a 
-                      href={`${process.env.REACT_APP_BACKEND_URL}${hw.file_path}`}
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      style={{
-                        background: 'rgba(255,255,255,0.2)',
-                        color: 'white',
-                        padding: '8px 16px',
-                        borderRadius: '20px',
-                        textDecoration: 'none',
-                        fontSize: '13px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '5px'
-                      }}
-                    >
-                      📥 View PDF
-                    </a>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openHomework(hw);
-                      }}
-                      data-testid={`homework-help-${hw.id}`}
-                      style={{
-                        background: '#48BB78',
-                        color: 'white',
-                        padding: '8px 16px',
-                        borderRadius: '20px',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '5px'
-                      }}
-                    >
-                      📝 Answer Homework
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="info-box">
-              <p style={{ margin: 0 }}>🎉 No homework assigned! Enjoy your free time.</p>
-            </div>
-          )}
-
-          {/* AI Homework Section */}
-          {aiHomeworkList.length > 0 && (
-            <div style={{ marginTop: '20px' }}>
-              <h4 style={{ color: '#86efac', marginBottom: '12px', fontSize: '14px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid rgba(72,187,120,0.3)', paddingBottom: 8 }}>AI Homework</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <h3 className="section-header">{t('Homework')}</h3>
+          {aiHomeworkList.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {aiHomeworkList.map((hw) => (
                   <div
                     key={hw.id}
@@ -883,7 +791,10 @@ function StudentView({ user, language, isTeacherPreview = false }) {
                     </div>
                   </div>
                 ))}
-              </div>
+            </div>
+          ) : (
+            <div className="info-box">
+              <p style={{ margin: 0 }}>No homework assigned yet.</p>
             </div>
           )}
         </div>
@@ -1001,7 +912,6 @@ function StudentView({ user, language, isTeacherPreview = false }) {
     );
   }
   
-  console.log('StudentView render - selectedHomework:', selectedHomework ? 'YES' : 'NO');
   console.log('StudentView render - selectedSubject:', selectedSubject ? selectedSubject.name : 'NO');
   console.log('StudentView render - selectedAITest:', selectedAITest ? selectedAITest.title : 'NO');
   
@@ -1041,34 +951,6 @@ function StudentView({ user, language, isTeacherPreview = false }) {
                 .then(res => setAiHomeworkList(res.data?.homework || []))
                 .catch(err => console.error('Error reloading AI homework:', err));
             }
-          }}
-        />
-      </div>
-    );
-  }
-
-  // Homework Answering View
-  if (selectedHomework) {
-    return (
-      <div className="student-view">
-        {isTeacherPreview && (
-          <div className="teacher-preview-banner" data-testid="teacher-preview-banner">
-            <span className="preview-icon">👁️</span>
-            <span className="preview-text">Teacher Preview Mode - View Only (No Submissions Allowed)</span>
-          </div>
-        )}
-        <HomeworkAnswering
-          homework={selectedHomework}
-          isTeacherPreview={isTeacherPreview}
-          onBack={() => {
-            setSelectedHomework(null);
-            setHomeworkSolution(null);
-          }}
-          onSubmit={() => {
-            // After submission, go back to homework list
-            setSelectedHomework(null);
-            setHomeworkSolution(null);
-            // Optionally reload homework list to update submission status
           }}
         />
       </div>

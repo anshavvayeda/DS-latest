@@ -16,7 +16,7 @@ from app.models.database import (
     get_db, User, Subject, Chapter, StudentProfile,
     StudentPerformance, StudentExamScore, StudentPracticeProgress,
     StructuredTest, StructuredTestSubmission, AsyncSessionLocal,
-    Content, HomeworkSubmission, StudyMaterial, Test, TestQuestion,
+    Content, StudyMaterial, Test, TestQuestion,
     StructuredHomework, StructuredHomeworkSubmission
 )
 from app.deps import (
@@ -184,29 +184,9 @@ async def get_parent_dashboard(
             "chapter_count": chapter_count
         }
     
-    # 4. Get Homework Stats (from HomeworkSubmission + StructuredHomeworkSubmission)
+    # 4. Get Homework Stats (AI Homework only)
     for subject_name in subject_data:
         subject_id = subject_data[subject_name]["subject_id"]
-        
-        # Old PDF homework stats
-        total_hw_result = await db.execute(
-            select(func.count(HomeworkSubmission.id)).where(
-                HomeworkSubmission.student_id == user.id,
-                HomeworkSubmission.subject_name == subject_name,
-                HomeworkSubmission.standard == standard
-            )
-        )
-        total_hw = total_hw_result.scalar() or 0
-        
-        submitted_hw_result = await db.execute(
-            select(func.count(HomeworkSubmission.id)).where(
-                HomeworkSubmission.student_id == user.id,
-                HomeworkSubmission.subject_name == subject_name,
-                HomeworkSubmission.standard == standard,
-                HomeworkSubmission.submitted.is_(True)
-            )
-        )
-        submitted_hw = submitted_hw_result.scalar() or 0
         
         # AI Homework stats
         ai_hw_result = await db.execute(
@@ -231,30 +211,13 @@ async def get_parent_dashboard(
         )
         completed_ai_hw = completed_ai_hw_result.scalar() or 0
         
-        # Combined totals
-        combined_total = total_hw + total_ai_hw
-        combined_completed = submitted_hw + completed_ai_hw
-        completion_pct = (combined_completed / combined_total * 100) if combined_total > 0 else 0
+        completion_pct = (completed_ai_hw / total_ai_hw * 100) if total_ai_hw > 0 else 0
         
         subject_data[subject_name]["homework_stats"] = {
-            "total_assigned": combined_total,
-            "submitted": combined_completed,
+            "total_assigned": total_ai_hw,
+            "submitted": completed_ai_hw,
             "completion_percentage": round(completion_pct, 1),
-            "pdf_homework": total_hw,
-            "ai_homework": total_ai_hw,
-            "ai_homework_completed": completed_ai_hw,
         }
-        
-        # Get missed PDF homework (not submitted)
-        missed_hw_result = await db.execute(
-            select(HomeworkSubmission).where(
-                HomeworkSubmission.student_id == user.id,
-                HomeworkSubmission.subject_name == subject_name,
-                HomeworkSubmission.standard == standard,
-                HomeworkSubmission.submitted.is_(False)
-            ).order_by(HomeworkSubmission.homework_upload_date.desc())
-        )
-        missed_hw = missed_hw_result.scalars().all()
         
         # Get pending AI homework (not completed)
         pending_ai_hw_result = await db.execute(
@@ -274,16 +237,8 @@ async def get_parent_dashboard(
         
         subject_data[subject_name]["missed_homework"] = [
             {
-                "homework_title": hw.homework_title,
-                "due_date": hw.homework_upload_date.isoformat() if hw.homework_upload_date else None,
-                "type": "pdf"
-            }
-            for hw in missed_hw
-        ] + [
-            {
                 "homework_title": hw.title,
                 "due_date": hw.deadline.isoformat() if hw.deadline else None,
-                "type": "ai"
             }
             for hw in pending_ai_hw
         ]

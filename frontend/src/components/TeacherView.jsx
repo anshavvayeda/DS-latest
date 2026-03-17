@@ -3,7 +3,6 @@ import axios from 'axios';
 import { API, getSubjectVectorIcon, getSubjectColorClass, extractErrorMessage } from '@/utils/helpers';
 import StructuredTestCreator from '@/components/StructuredTestCreator';
 import StructuredHomeworkCreator from '@/components/StructuredHomeworkCreator';
-import TestManagement from '@/components/TestManagement';
 import TeacherUpload from '@/components/TeacherUpload';
 import TeacherReviewMode from '@/components/TeacherReviewMode';
 
@@ -1271,11 +1270,6 @@ function TeacherView({ user, language }) {
                </button>
              </div>
              <TeacherAIHomeworkList subjectId={selectedSubject.id} standard={standard} />
-             <TestManagement
-               subjectId={selectedSubject.id}
-               standard={standard}
-               contentType="homework"
-             />
            </div>
          )
        )}
