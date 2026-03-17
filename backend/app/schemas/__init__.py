@@ -3,14 +3,6 @@ from pydantic import BaseModel, validator
 from typing import Optional, List
 
 
-class SendOTPRequest(BaseModel):
-    identifier: str
-    type: str
-
-class VerifyOTPRequest(BaseModel):
-    identifier: str
-    code: str
-
 class CreateSubjectRequest(BaseModel):
     name: str
     standard: int
@@ -119,15 +111,6 @@ class AdminImpersonateRequest(BaseModel):
 class RollNoLoginRequest(BaseModel):
     roll_no: str
     password: str
-
-class UserResetPasswordRequest(BaseModel):
-    roll_no: str
-    old_password: str
-    otp: str
-    new_password: str
-
-class RequestPasswordResetOTPRequest(BaseModel):
-    roll_no: str
 
 class CreateHomeworkRequest(BaseModel):
     title: str

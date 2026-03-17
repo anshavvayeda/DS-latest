@@ -196,11 +196,24 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
   - `app/routes/structured_tests.py` (904 lines): AI test creation, submission, evaluation
 - All 21 backend + frontend tests passed (100% success rate)
 
+### Mobile Responsiveness (Verified - Mar 17, 2026)
+- Added responsive CSS rules (media queries at 768px and 480px breakpoints) for Teacher, Student, and Parent views
+- Teacher tabs stack vertically on mobile, subject cards use single column layout
+- No horizontal overflow on any page at 375px viewport width
+- Verified by testing agent: 8/8 mobile responsiveness tests passed (100%)
+
+### OTP Dead Code Cleanup (Complete - Mar 17, 2026)
+- Removed all dead OTP-related code: `SendOTPRequest`, `VerifyOTPRequest`, `UserResetPasswordRequest`, `RequestPasswordResetOTPRequest` schemas
+- Removed `OTPCode` model from database.py
+- Cleaned `auth_service.py` — removed `generate_otp`, `send_email_otp`, `send_sms_otp`, `create_otp`, `verify_otp` functions and OTP-related env vars
+- Removed `MOCK_OTP_MODE` and `MOCK_OTP_VALUE` from backend .env
+- All logins (teacher, student, admin) verified working after cleanup
+
 ### Other Completed Work
 - Branding/UI overhaul, bug fixes, CI/CD pipeline, documentation
 
 ## Known Issues
-- **P1**: Admin dashboard empty on EC2 (user verification pending)
+- **P2**: Admin dashboard empty on EC2 (uses separate unseeded database)
 
 ## Recently Fixed Bugs (Mar 16, 2026)
 - **CRITICAL Login Bug (P0, Recurring) — FIXED**: After admin logout, student/teacher login was broken. Three root causes: 1) `delete_cookie` didn't match `set_cookie` attributes (samesite/secure/httponly) so cookie was never deleted, 2) Server prioritized stale cookie over fresh Authorization header, 3) Frontend didn't clear stale cookies before new login. All three fixed and verified with 11/11 backend + frontend tests passing.
@@ -212,7 +225,6 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 ## Prioritized Backlog
 
 ### P1
-- Delete old PDF homework system (pending user approval of new AI homework)
 - Fix minor PDF extraction flaws in PYQ feature
 - Fix pre-existing "Login As User" search display bug in AdminDashboard
 

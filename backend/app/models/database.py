@@ -7,7 +7,6 @@ Tables:
 CORE AUTH:
 - users: Base authentication (email/phone, role)
 - student_profiles: Extended student data (roll_no as primary identifier)
-- otp_codes: OTP verification
 
 CONTENT MANAGEMENT:
 - subjects: 5 default subjects per standard (Class 1-10)
@@ -185,19 +184,6 @@ class StudentProfile(Base):
         Index('idx_student_roll_no', 'roll_no'),
         Index('idx_student_standard', 'standard'),
     )
-
-
-class OTPCode(Base):
-    """OTP verification codes for login"""
-    __tablename__ = "otp_codes"
-    
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    identifier = Column(String(255), nullable=False, index=True)  # email or phone
-    code = Column(String(10), nullable=False)
-    attempts = Column(Integer, default=0)
-    expires_at = Column(DateTime(timezone=True), nullable=False)
-    verified = Column(Boolean, default=False)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 
 # =============================================================================

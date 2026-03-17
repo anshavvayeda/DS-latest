@@ -44,7 +44,7 @@ async def login_with_password(request: PasswordLoginRequest, response: Response,
     
     # Check if user has password hash
     if not user.password_hash:
-        raise HTTPException(status_code=401, detail="Password login not enabled for this account. Use OTP.")
+        raise HTTPException(status_code=401, detail="Password login not enabled for this account.")
     
     # Verify password
     if not verify_password(request.password, user.password_hash):
@@ -627,7 +627,7 @@ async def admin_reset_password(
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(require_admin)
 ):
-    """Admin: Reset any user's password by roll_no (no OTP required)"""
+    """Admin: Reset any user's password by roll_no"""
     # Find user by roll_no
     profile_result = await db.execute(
         select(StudentProfile).where(StudentProfile.roll_no == request.roll_no)
@@ -786,7 +786,7 @@ async def login_with_rollno(
     response: Response,
     db: AsyncSession = Depends(get_db)
 ):
-    """Login using roll_no and password (replaces OTP login)"""
+    """Login using roll_no and password"""
     # Find user by roll_no
     profile_result = await db.execute(
         select(StudentProfile).where(StudentProfile.roll_no == request.roll_no)
