@@ -94,6 +94,30 @@ const StudentRegistrationForm = ({ onSuccess, onCancel }) => {
       return;
     }
 
+    // Validate phone is exactly 10 digits
+    if (!/^\d{10}$/.test(formData.phone)) {
+      setError('Phone number must be exactly 10 digits');
+      return;
+    }
+
+    // Validate parent phone is exactly 10 digits (mandatory for students)
+    if (formData.role === 'student') {
+      if (!formData.parent_phone || !formData.parent_phone.trim()) {
+        setError("Parent's phone number is required");
+        return;
+      }
+      if (!/^\d{10}$/.test(formData.parent_phone)) {
+        setError("Parent's phone number must be exactly 10 digits");
+        return;
+      }
+    }
+
+    // Validate all mandatory fields
+    if (!formData.name.trim()) { setError('Name is required'); return; }
+    if (!formData.roll_no.trim()) { setError('Roll Number is required'); return; }
+    if (formData.role === 'student' && !formData.standard) { setError('Standard/Class is required'); return; }
+    if (formData.role === 'student' && !formData.gender) { setError('Gender is required'); return; }
+
     setLoading(true);
     try {
       const payload = {
@@ -269,14 +293,15 @@ const StudentRegistrationForm = ({ onSuccess, onCancel }) => {
 
             <div className="form-row">
               <div className="form-group">
-                <label>Parent's Phone</label>
+                <label>Parent's Phone *</label>
                 <input
                   type="tel"
                   name="parent_phone"
                   value={formData.parent_phone}
                   onChange={handleChange}
-                  placeholder="Parent's phone (optional)"
-                  pattern="[0-9]{10}"
+                  required
+                  placeholder="10-digit parent's phone"
+                  data-testid="reg-parent-phone-input"
                 />
               </div>
             </div>
@@ -909,6 +934,20 @@ const EditUserProfile = ({ onCancel }) => {
     setSaving(true);
     setError('');
     setSuccess('');
+
+    // Validate phone is exactly 10 digits
+    if (editData.phone && !/^\d{10}$/.test(editData.phone)) {
+      setError('Phone number must be exactly 10 digits');
+      setSaving(false);
+      return;
+    }
+    // Validate parent phone is exactly 10 digits
+    if (editData.parent_phone && !/^\d{10}$/.test(editData.parent_phone)) {
+      setError("Parent's phone number must be exactly 10 digits");
+      setSaving(false);
+      return;
+    }
+
     try {
       const payload = { ...editData };
       if (payload.standard) payload.standard = parseInt(payload.standard);
