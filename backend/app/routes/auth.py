@@ -846,6 +846,31 @@ async def login_with_rollno(
     db: AsyncSession = Depends(get_db)
 ):
     """Login using roll_no and password"""
+    # Try admin login if roll_no matches admin username
+    if ADMIN_USERNAME and ADMIN_PASSWORD and request.roll_no == ADMIN_USERNAME and request.password == ADMIN_PASSWORD:
+        result = await db.execute(select(User).where(User.role == 'admin'))
+        admin_user = result.scalars().first()
+        if not admin_user:
+            admin_user = User(
+                email=f"{ADMIN_USERNAME}@admin.local",
+                phone=None,
+                password_hash=hash_password(ADMIN_PASSWORD),
+                role='admin',
+                is_active=True,
+                profile_completed=True
+            )
+            db.add(admin_user)
+            await db.commit()
+            await db.refresh(admin_user)
+        token = create_jwt_token(str(admin_user.id), 'admin')
+        response.set_cookie(key="auth_token", value=token, httponly=True, max_age=86400, samesite="None", secure=True)
+        logger.info(f"✅ Admin logged in via main login form")
+        return {
+            "message": "Login successful",
+            "token": token,
+            "user": {"id": str(admin_user.id), "role": "admin", "username": ADMIN_USERNAME}
+        }
+
     # Find user by roll_no
     profile_result = await db.execute(
         select(StudentProfile).where(StudentProfile.roll_no == request.roll_no)
