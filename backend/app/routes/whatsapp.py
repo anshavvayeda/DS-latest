@@ -1,4 +1,4 @@
-"""WhatsApp Parent Chatbot - Meta Business API Integration"""
+"""WhatsApp Parent Chatbot - Meta Business API with Agentic Implementation"""
 from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from fastapi.responses import PlainTextResponse, HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,6 +16,7 @@ from app.models.database import (
     StructuredHomeworkSubmission, WhatsappParentBrief, WhatsappChatMemory,
     AsyncSessionLocal
 )
+from app.services.whatsapp_agent import run_agent
 
 logger = logging.getLogger(__name__)
 
@@ -25,13 +26,12 @@ WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
 WHATSAPP_ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN")
 WHATSAPP_VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-WHATSAPP_BASE_URL = os.getenv("WHATSAPP_BASE_URL", "")  # Override for dashboard links (e.g. ngrok URL)
+WHATSAPP_BASE_URL = os.getenv("WHATSAPP_BASE_URL", "")
 
 CHAT_MEMORY_LIMIT = 20
 
 
 def _get_dashboard_base_url() -> str:
-    """Get base URL for dashboard links. Uses WHATSAPP_BASE_URL if set, else REACT_APP_BACKEND_URL."""
     return WHATSAPP_BASE_URL or os.getenv("REACT_APP_BACKEND_URL", "")
 
 
