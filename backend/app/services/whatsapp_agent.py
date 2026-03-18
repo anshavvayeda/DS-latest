@@ -510,6 +510,14 @@ async def run_agent(
 
     # Detect language of current message
     detected_lang = _detect_language(user_message)
+
+    # For first generic greetings, default to English regardless of input language
+    generic_greetings = {"hi", "hello", "hey", "namaste", "namaskar", "kem cho",
+                         "नमस्ते", "નમસ્તે", "हेलो", "હેલો", "नमस्कार"}
+    is_generic_greeting = user_message.strip().lower().rstrip("!.?") in generic_greetings
+    if is_first_message and is_generic_greeting:
+        detected_lang = "english"
+
     lang_instruction = ""
     if detected_lang == "gujarati":
         lang_instruction = "\n\n**DETECTED LANGUAGE: GUJARATI. You MUST respond ENTIRELY in Gujarati script (ગુજરાતી). Example: 'હોમવર્ક પૂરું થયું છે'. Do NOT use Hindi/Devanagari.**"
@@ -538,12 +546,9 @@ ABSOLUTE RULES:
 4. NEVER fabricate data. Only share what comes from tool results.
 
 CONVERSATION BEHAVIOR:
-- FIRST MESSAGE (generic greeting like Hi/Hello/नमस्ते/કેમ છો): Introduce yourself as "StudyBuddy PTM Agent" and greet the parent warmly, like a teacher welcoming them. Mention {student_name} by name and politely ask how you can help today. For example: "Namaste! I am StudyBuddy PTM Agent. Welcome! I am here to discuss {student_name}'s progress. How can I help you today?" Do NOT call any tools. Do NOT dump data.
-  Examples:
-  - Parent says "Hi" → "Hello! I am StudyBuddy PTM Agent. Welcome! I am here to discuss {student_name}'s academic progress. Please tell me, how can I help you today?"
-  - Parent says "नमस्ते" → "नमस्ते! मैं StudyBuddy PTM Agent हूँ। {student_name} के बारे में बात करने के लिए आपका स्वागत है। बताइए, आज मैं आपकी कैसे मदद कर सकता हूँ?"
-  - Parent says "કેમ છો" → "નમસ્તે! હું StudyBuddy PTM Agent છું। {student_name} ના વિકાસ વિશે વાત કરવા માટે આપનું સ્વાગત છે। બોલો, આજે હું કેવી રીતે મદદ કરી શકું?"
-- SPECIFIC QUESTION: Call the appropriate tool(s), get the data, then answer like a teacher would — with care, encouragement, and practical advice. After answering, gently ask if they have any other questions.
+- FIRST MESSAGE — GENERIC GREETING (Hi/Hello/नमस्ते/કેમ છો): Respond in English (default language). Introduce yourself in exactly one sentence: "Hello! I am StudyBuddy PTM Agent, here to discuss {student_name}'s academic progress." Then ask: "How can I help you today?" Do NOT call any tools. Do NOT dump data. Keep it to 2 sentences max.
+- FIRST MESSAGE — SPECIFIC QUESTION (e.g., "homework pending hai kya?" or "marks batao"): First greet and introduce in one sentence in the language of the message. Then answer the question using tools. After answering, ask: "Would you like to see {student_name}'s performance dashboard or any other information about {student_name}'s academic performance?"
+- FOLLOW-UP QUESTIONS: Answer using tools in the language of the current message. After answering, ask if they want the dashboard or have more questions.
 - UNAVAILABLE DATA: If asked about something you don't have (fees, attendance, behavior), say politely like a teacher: "I only have academic records with me right now. For that, please contact the school office directly."
 - DASHBOARD REQUEST: Use get_dashboard_link tool and share the URL naturally.
 
@@ -598,11 +603,9 @@ TONE: Speak like a warm, caring Indian class teacher in a PTM. Use respectful la
                     "messages": messages,
                     "max_tokens": 500,
                     "temperature": 0.7,
+                    "tools": TOOLS,
+                    "tool_choice": "auto",
                 }
-                # Only send tools if not first message (first msg = just greet)
-                if not is_first_message:
-                    payload["tools"] = TOOLS
-                    payload["tool_choice"] = "auto"
 
                 resp = await client.post(
                     "https://api.sarvam.ai/v1/chat/completions",
