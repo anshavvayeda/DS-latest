@@ -24,7 +24,7 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - **Frontend**: React (modular components)
 - **AI**: OpenRouter (GPT-4o, Gemini Flash Lite)
 - **Storage**: AWS S3
-- **CI/CD**: GitHub Actions → EC2
+- **CI/CD**: GitHub Actions -> EC2
 
 ### Backend Structure (Refactored Mar 16, 2026)
 ```
@@ -36,240 +36,75 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 │   ├── routes/
 │   │   ├── auth.py         (1090 lines - Auth, admin CRUD)
 │   │   ├── content.py      (2108 lines - Subjects, chapters, PYQs)
-│   │   ├── homework.py     (1036 lines - Homework CRUD, evaluation)
+│   │   ├── structured_homework.py (570 lines - AI homework CRUD)
 │   │   ├── parent_teacher.py (1274 lines - Parent/teacher dashboards)
-│   │   └── structured_tests.py (904 lines - AI test lifecycle)
+│   │   ├── structured_tests.py (912 lines - AI test lifecycle)
+│   │   └── whatsapp.py     (WhatsApp webhook)
 │   ├── models/database.py  (DB models, engine)
-│   └── services/           (AI, storage, auth, translation)
-```
-
-### Frontend Structure (Refactored Mar 16, 2026)
-```
-/app/frontend/src/
-├── App.js                 (202 lines - Router, auth shell)
-├── utils/helpers.js       (319 lines - Shared utilities)
-├── components/
-│   ├── AuthScreen.jsx     (548 lines - Login, register, reset)
-│   ├── Header.jsx         (76 lines - Navigation header)
-│   ├── StudentView.jsx    (1580 lines - Student dashboard)
-│   ├── TeacherView.jsx    (1502 lines - Teacher dashboard)
-│   ├── ToolContentDisplay.jsx (401 lines - Learning content)
-│   ├── AdminDashboard.jsx (Admin panel)
-│   ├── StudentAITest.jsx  (Test taking)
-│   └── ... (other components)
+│   └── services/
+│       ├── evaluation_agent.py (AI evaluation orchestrator)
+│       └── whatsapp_agent.py   (Sarvam AI chatbot)
 ```
 
 ## What's Been Implemented
 
-### Phase 1 - Backend (Complete)
-- Database models: StructuredTest, StructuredQuestion, StructuredTestSubmission, EvaluationResult
-- AI evaluation service with multi-LLM orchestration
-- Full CRUD API endpoints for structured tests
-
-### Phase 2 - Teacher UI (Complete)
-- StructuredTestCreator component with multi-step form
-- 7 question types with marking schemes/rubrics
-- Subject shown as read-only field (auto-populated from parent view)
-
-### Phase 3 - Student Results UI (Complete - Mar 15, 2026)
-- StudentAITest component for test-taking and results viewing
-- Test-taking: Timer, question navigation, all input types
-- Results: Grade card (A+/A/B/C/D/F), score/percentage, improvement notes
-- Per-question expandable breakdown with rubric feedback
-- Parallel data fetching via Promise.allSettled
-
-### Phase 4 - Student Performance Dashboard (Complete - Mar 15, 2026)
-- Backend API: GET /api/structured-tests/student/performance
-- Summary cards: total tests, average %, best %, recent trend
-- Subject-wise performance with progress bars
-- Question type strengths/weaknesses analysis (green/yellow/red indicators)
-- Recent tests timeline with grade badges
-- Score trend chart (bar + line overlay, appears with 2+ tests)
-
-### Old Test System Removed (Complete - Mar 16, 2026)
-- Removed ~1800 lines of old test code (PDF upload, S3 JSON, single-prompt LLM evaluation)
-- Deleted: old test routes (POST /tests, GET /tests/subject/*, etc.), TestTaking.jsx/css, cleanup_expired_tests_task
-- Kept: PYQ (study resources), Homework (TestManagement with contentType=homework), all Structured* (new AI system)
-- Parent dashboard updated to only query StructuredTestSubmission
-- Verified: 13/13 backend tests + full frontend UI verification passed
-
-### Data Retention Policy (Complete - Mar 16, 2026)
-- EvaluationResult TTL: 2 months (changed from 1 month)
-- Background cron job runs every 6 hours to clean up expired detailed evaluation records
-- Before deletion: condenses per-question improvement suggestions into brief 1-2 sentence summary
-- Retained permanently: total_score, max_score, percentage, class_rank, improvement_summary
-- Deleted after 2 months: detailed EvaluationResult rows, raw answers_json
-- Manual admin cleanup: DELETE /api/structured-tests/cleanup/expired
-- Frontend gracefully shows "archived per 2-month retention policy" when details expire
-
-### Student Greeting (Complete - Mar 16, 2026)
-- Added cursive greeting "Hi <name>, Which subject do you want to study today?" using Dancing Script font with gradient colors
-- Appears above the subjects grid only for students (not in teacher preview mode)
-
-### Teacher Review Mode (Complete - Mar 16, 2026)
-- Teachers can click "Review Submissions" on any AI-evaluated test to see all student submissions
-- Detailed view shows each question with student answer, AI feedback, and marks
-- Teachers can override AI marks per question and add comments
-- Save Review persists changes and recalculates final score
-- Backend endpoint POST /api/structured-tests/{test_id}/review/{student_id} handles overrides
-
-### Parent Dashboard AI Sync (Complete - Mar 16, 2026)
-- Backend endpoint `/api/student/parent-dashboard` updated to query StructuredTestSubmission + StructuredTest
-- AI-evaluated test scores now appear in subject-wise performance cards with graphs
-- Overall stats (tests taken, avg score) include combined data from old and AI test systems
-- Subject classification (strong/average/weak) based on all test data
-- Replaced SVG-based chart with pure HTML/CSS bar chart for reliable rendering
+### Phase 1-4 - Core LMS (Complete)
+- Database models, AI evaluation service, structured test CRUD
+- Teacher UI with 7 question types
+- Student test-taking and results UI with grade cards
+- Student performance dashboard with trends
 
 ### AI Homework Agent (Complete - Mar 16, 2026)
-- Backend: New route module `structured_homework.py` with full CRUD + hint system
-- DB models: `StructuredHomework`, `StructuredHomeworkQuestion`, `StructuredHomeworkSubmission`
-- **Pre-generated hints**: Hints are generated at publish time (background task) and stored in `hint_text` column on questions. Students get hints from DB — ZERO LLM calls at request time
-- Hint quality: Logical, question-specific, thought-provoking hints that guide reasoning (not generic "refer your notes")
-- AI hint flow: 1st click → pre-generated hint from DB, 2nd click → "Check My Answer" validates student response as correct/incorrect (no answer reveal)
-- Check Answer endpoint: `/api/structured-homework/{id}/check-answer` returns `{correct: true/false}` without revealing the answer
-- Match the Following (student view): Column 1 shows fixed left items, Column 2 shows dropdown selects with shuffled right options. Already-selected options are disabled
-- No marks/grading — only completed/not completed tracking
-- Deadline with auto-cleanup (answers/hints purged after deadline, completion status retained)
-- Frontend: `StructuredHomeworkCreator.jsx` (teacher), `StudentAIHomework.jsx` (student solver)
-- Question types: MCQ, true/false, fill blank, one word, match following, short/long answer, numerical
+- Pre-generated hints, check-answer without revealing answers
+- No marks/grading, only completion tracking
 
-### Old PDF Homework System Removed (Complete - Mar 17, 2026)
-- Deleted `/app/backend/app/routes/homework.py` (1036 lines)
-- Removed homework router from `server.py`
-- Removed `TestManagement contentType="homework"` from TeacherView
-- Removed PDF homework cards, `homeworkList` state, `openHomework` function, `HomeworkAnswering` import from StudentView
-- Removed `HomeworkSubmission` import from parent_teacher.py — parent dashboard now shows AI homework stats only
-- AI homework system is now the only homework system
+### WhatsApp Parent Chatbot (Complete - Mar 18, 2026)
+- Sarvam AI agentic architecture with native Indic language support
+- Hindi (Devanagari), Gujarati (Gujarati script), English
 
-### Teacher AI Homework Visibility + Parent Dashboard (Complete - Mar 17, 2026)
-- Added `TeacherAIHomeworkList` component to teacher's Homework tab — shows all published AI homework with title, status badge, question count, deadline, and View Submissions/Delete buttons
-- View Submissions shows per-student: roll number, questions attempted, hints used, and completion status
-- Updated parent dashboard backend to include AI homework stats alongside PDF homework
-- Parent dashboard now shows combined homework completion (PDF + AI), with AI homework items tagged as `[ai]` in missed homework list
-- New fields in parent API response: `ai_homework`, `ai_homework_completed` per subject
+### Content Creation - Rational Numbers (Recreated - Mar 18, 2026)
+- Chapter "Rational Numbers" (Math, Std 8, KV) with AI-generated content
+- 2 tests (10 questions each) with proper evaluation_points format
+- 2 homework assignments (5 questions each) with proper objective_data format
+- Test IDs: 4f47c150-425b-4d66-90ee-a7c33bfb8e8e, 9668ca1c-d180-46fa-85e2-56fa60899157
+- Homework IDs: 62d4c6a9-2f7b-449f-bf36-8429da36b1dc, aed61f3b-d8a1-40c0-8278-434ed30aa44f
 
-### Auth Cleanup (Complete - Mar 17, 2026)
-- Removed "Register as Teacher" link and form from login page — teachers are now only registered by admin
-- Replaced forgot password OTP flow with "Contact your admin" message
-- Removed backend OTP endpoints: /auth/send-otp, /auth/verify-otp, /auth/register-teacher, /auth/request-reset-otp, /auth/reset-password
-- Removed OTP_STORE from deps.py
-- Login page is now clean: Roll Number, Password, Login, Forgot Password (contact admin), Admin Login
+## Recently Fixed Bugs
 
-### Flashcard Improvements (Complete - Mar 17, 2026)
-- Updated flashcard generation prompts across all 3 generation functions (ai_orchestrator_v2, ai_service generate_flashcards, ai_service generate_flashcards_atomic) to strictly enforce 1-2 word answers only
-- Prompt now explicitly forbids definitions, descriptions, and long answers on the back side
-- Prompt prioritizes directly memorizable content: key terms, dates, names, formulas, values
-- Replaced flashcard icon with a playing cards SVG icon (both tool card and tab)
-- Rewrote `StructuredHomeworkCreator.jsx` to use identical CSS classes as `StructuredTestCreator.jsx`
-- Both components now share `StructuredTestCreator.css` with matching class structure
-- Key fixes: MCQ uses `stc-section-box` + `stc-inline`, True/False uses radio buttons (not dropdown), Match pairs use `stc-pair-row` + `stc-arrow`, Model answer wrapped in `stc-section-box`, Publish button in `stc-actions` wrapper
-- **Refined Remove button**: Changed from solid pink/red background to subtle bordered design — transparent by default, turns red on hover
-- **Refined MCQ Options section**: Added border to section box, separator line under heading, white backgrounds on input fields for better contrast, bold labels
-- **Refined Question header**: Added bottom border separator between header and content
-- **Added mobile responsiveness**: Inline options stack vertically on small screens, radio buttons stack, pair rows wrap
-- Fixed teacher registration bug: missing `login_phone` field and `db.flush()` in `/api/auth/register-teacher`
-- Tested: 100% frontend CSS class verification, visual consistency confirmed
-
-### Frontend Refactoring (Complete - Mar 16, 2026)
-- Monolithic `App.js` (~4664 lines) split into modular components:
-  - `App.js` (202 lines): Auth routing, state management
-  - `utils/helpers.js` (319 lines): Shared utilities (API, icons, translate)
-  - `AuthScreen.jsx` (548 lines): Login, register, password reset
-  - `Header.jsx` (76 lines): Navigation header with role toggle
-  - `StudentView.jsx` (1580 lines): Student dashboard, subjects, tools
-  - `TeacherView.jsx` (1502 lines): Teacher dashboard, content management
-  - `ToolContentDisplay.jsx` (401 lines): Learning tool content renderer
-- Mobile responsive CSS added for Teacher and Student views (375px+)
-- Dead files cleaned up (old test scripts, seed data)
-- All tests passed: Backend 21/21, Frontend 95% (pre-existing Login As User search minor issue)
-- Fixed missing SQLAlchemy imports (and_, desc, text, asc, distinct) across all route modules that caused 500 errors
-
-### Backend Refactoring (Complete - Mar 16, 2026)
-- Monolithic `server.py` (~5950 lines) split into modular architecture:
-  - `server.py` (165 lines): App setup, CORS, lifecycle, router registration
-  - `app/deps.py` (87 lines): Shared auth dependencies (get_current_user, password hashing, config)
-  - `app/schemas/__init__.py` (137 lines): All Pydantic request/response models
-  - `app/routes/auth.py` (1090 lines): Auth, login, admin CRUD
-  - `app/routes/content.py` (2108 lines): Subjects, chapters, PYQs, student content
-  - `app/routes/homework.py` (1036 lines): Homework CRUD, evaluation
-  - `app/routes/parent_teacher.py` (1274 lines): Parent dashboard, teacher analytics, study materials
-  - `app/routes/structured_tests.py` (904 lines): AI test creation, submission, evaluation
-- All 21 backend + frontend tests passed (100% success rate)
-
-### Mobile Responsiveness (Verified - Mar 17, 2026)
-- Added responsive CSS rules (media queries at 768px and 480px breakpoints) for Teacher, Student, and Parent views
-- Teacher tabs stack vertically on mobile, subject cards use single column layout
-- No horizontal overflow on any page at 375px viewport width
-- Verified by testing agent: 8/8 mobile responsiveness tests passed (100%)
-- **Gujarati language button**: Hidden on mobile (display:none at max-width:768px), visible on desktop
-- **AI Test/Homework cards (teacher)**: Changed from horizontal flex-row to vertical flex-column layout for mobile
-- **Flashcard mobile display**: Card height auto-sizes on mobile (no fixed 300px), "Click to reveal" text uses relative positioning instead of absolute to avoid overlap, font sizes reduced for mobile readability
-
-### OTP Dead Code Cleanup (Complete - Mar 17, 2026)
-- Removed all dead OTP-related code: `SendOTPRequest`, `VerifyOTPRequest`, `UserResetPasswordRequest`, `RequestPasswordResetOTPRequest` schemas
-- Removed `OTPCode` model from database.py
-- Cleaned `auth_service.py` — removed `generate_otp`, `send_email_otp`, `send_sms_otp`, `create_otp`, `verify_otp` functions and OTP-related env vars
-- Removed `MOCK_OTP_MODE` and `MOCK_OTP_VALUE` from backend .env
-- All logins (teacher, student, admin) verified working after cleanup
-
-### WhatsApp Parent Chatbot (Complete - Mar 17, 2026)
-- Meta WhatsApp Business API integration for parent-student performance queries
-- GPT-4o via OpenRouter generates contextual, warm responses using student data
-- PostgreSQL chat memory with 20-message sliding window per phone number
-- New DB tables: `whatsapp_parent_briefs` (cached performance data), `whatsapp_chat_memory`
-- Performance aggregation: test scores, missed homework, strong/weak subjects, class rank, homework completion rate
-- Phone number matching with country code handling (with/without 91 prefix)
-- Public token-based parent dashboard (server-rendered HTML, no login required)
-- Webhook endpoints: GET for Meta verification, POST for message processing
-- Fallback summary if LLM fails
-- Testing: 18/18 backend tests passed (100%)
-
-### WhatsApp Agentic Architecture (Complete - Mar 18, 2026)
-- Refactored from single-prompt to agentic architecture with Sarvam AI (sarvam-30b) tool calling
-- Switched from OpenRouter GPT-4o to Sarvam AI for native Indic language support
-- Native script responses: Hindi in Devanagari (हिंदी), Gujarati in Gujarati script (ગુજરાતી), English in Latin
-- `whatsapp_agent.py`: Router → Planner → Tools pattern with 7 tools (overview, subject perf, recent tests, pending homework, class rank, improvement tips, dashboard link)
-- Conversation behavior: First message = warm greeting without data dump, Specific question = precise tool-based answer
-- Graceful handling of unavailable data (fees, attendance) with school contact suggestion
-- Old `_generate_response` function removed; `run_agent` is now the sole response generator
-- Test endpoint: POST /api/whatsapp/test-message for development testing
-- Testing: 18/18 backend tests passed (100%)
-
-### Credential Management Script (Complete - Mar 18, 2026)
-- Interactive bash script at `/app/scripts/demo_setup.sh` for EC2 demo setup
-- Auto-detects environment (EC2 vs Emergent preview)
-- Menu-driven: update WhatsApp token, ngrok URL, OpenRouter key, or all at once
-- Shows current masked config values, auto-restarts service after changes
-- Includes option to clear chat history for fresh testing
-
-### Other Completed Work
-- Branding/UI overhaul, bug fixes, CI/CD pipeline, documentation
+### P0 Bug Fix: Test Evaluation TypeError (Fixed - Mar 18, 2026)
+- **Bug**: `TypeError: string indices must be integers, not 'str'` when evaluating tests
+- **Root Cause**: `evaluation_points` for short_answer questions was stored as a plain comma-separated string instead of a list of dicts with `{id, title, expected_concept, marks}` structure
+- **Fix**: Updated `evaluation_agent.py evaluate_subjective()` to handle 3 formats:
+  1. Proper list of dicts (correct format)
+  2. Comma-separated string (auto-converts to list of dicts with equal marks)
+  3. None (falls back to model_answer comparison)
+- **Data Fix**: Deleted all wrongly populated tests/homework and recreated with correct format
+- **Verified**: 9/9 backend tests passed, Test 1: 16.5/18 (91.67%), Test 2: 18/20 (90%)
 
 ## Known Issues
 - **P2**: Admin dashboard empty on EC2 (uses separate unseeded database)
-
-## Recently Fixed Bugs (Mar 16, 2026)
-- **CRITICAL Login Bug (P0, Recurring) — FIXED**: After admin logout, student/teacher login was broken. Three root causes: 1) `delete_cookie` didn't match `set_cookie` attributes (samesite/secure/httponly) so cookie was never deleted, 2) Server prioritized stale cookie over fresh Authorization header, 3) Frontend didn't clear stale cookies before new login. All three fixed and verified with 11/11 backend + frontend tests passing.
-- **Parent Dashboard graphs not rendering**: Replaced SVG chart with pure HTML/CSS bar chart
-- **Parent Dashboard not showing AI test scores**: Updated backend to query StructuredTestSubmission
-- **Save Draft was not saving questions before Publish**: `handlePublish` now always calls `handleSave()` first
-- **Parallel data fetching**: Replaced sequential awaits with `Promise.allSettled` to prevent UI hang
+- **P2**: bcrypt/passlib version mismatch warning (functional but logs errors)
 
 ## Prioritized Backlog
 
 ### P1
+- EC2 deployment guidance (SARVAM_API_KEY setup via demo_setup.sh)
 - Fix minor PDF extraction flaws in PYQ feature
 - Fix pre-existing "Login As User" search display bug in AdminDashboard
 
 ### P2
+- Verify parent phone bug fix on EC2 (user verification pending)
 - Implement Redis caching
 - Add automated testing
-- Verify parent phone bug fix on EC2 (user verification pending)
 
 ### P3
 - Enhance Teacher Review Mode
 
 ## Test Credentials
 - **Admin**: username `admin`, password `Admin@123`
-- **Student**: roll_no `S001`, password `123456`
-- **Teacher**: roll_no `teacher4`, password `Test@123`
+- **Student S1 (KV)**: roll_no `S1`, password `Test@123`
+- **Teacher T1 (KV)**: roll_no `T1`, password `Test@123`
+
+## Key IDs
+- Subject (Math, Std 8): 9e05f51f-7235-4cd1-8539-71aa7d962ea1
+- Chapter (Rational Numbers): a391a21d-f7e4-4ddb-be1f-15b0de1bd1f5
