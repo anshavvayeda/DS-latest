@@ -258,25 +258,46 @@ async def evaluate_subjective(question: dict, student_answer: str) -> dict:
             }
         }
     
-    eval_points = question.get("evaluation_points") or []
+    raw_eval_points = question.get("evaluation_points")
     model_answer = question.get("model_answer", "")
+    max_marks = question["max_marks"]
+    
+    # Normalize evaluation_points: handle string, list of dicts, or None
+    eval_points = []
+    if isinstance(raw_eval_points, list):
+        eval_points = raw_eval_points
+    elif isinstance(raw_eval_points, str) and raw_eval_points.strip():
+        # Convert comma-separated string to evaluation point dicts
+        criteria = [c.strip() for c in raw_eval_points.split(",") if c.strip()]
+        marks_each = round(max_marks / max(len(criteria), 1), 2)
+        eval_points = [
+            {"id": i + 1, "title": c, "expected_concept": c, "marks": marks_each}
+            for i, c in enumerate(criteria)
+        ]
     
     points_text = ""
-    for ep in eval_points:
-        points_text += f"\n- Point: {ep['title']} ({ep['marks']} marks)\n  Expected concept: {ep['expected_concept']}"
+    if eval_points and isinstance(eval_points[0], dict):
+        for ep in eval_points:
+            title = ep.get("title", "")
+            marks = ep.get("marks", 0)
+            concept = ep.get("expected_concept", title)
+            points_text += f"\n- Point: {title} ({marks} marks)\n  Expected concept: {concept}"
     
-    prompt = f"""You are a strict but fair exam evaluator. Evaluate the student's answer using the evaluation rubric.
+    # If no structured rubric, use model answer for evaluation
+    rubric_section = f"Evaluation rubric:{points_text}" if points_text else f"Model answer to compare against: {model_answer}"
+    
+    prompt = f"""You are a strict but fair exam evaluator. Evaluate the student's answer.
 
 Question: {question.get('question_text', '')}
-Maximum marks: {question['max_marks']}
+Maximum marks: {max_marks}
 
 Model answer: {model_answer}
 
-Evaluation rubric:{points_text}
+{rubric_section}
 
 Student's answer: {answer}
 
-For EACH evaluation point, determine if the student covered the concept.
+Evaluate the student's answer against the model answer and rubric.
 Return JSON:
 {{
   "evaluation_points": [
@@ -289,7 +310,7 @@ Return JSON:
 Rules:
 - Award marks ONLY for points where the concept is clearly covered
 - Partial marks within a point are allowed if partially covered
-- marks_given must not exceed the allocated marks for that point
+- Total marks_given across all points must not exceed {max_marks}
 - Be specific in explanations"""
     
     system_msg = "You are an experienced exam evaluator. Be fair, consistent, and provide constructive feedback."

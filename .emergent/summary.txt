@@ -1,164 +1,279 @@
-<analysis>**original_problem_statement**: The user's initial goal was to build a full-stack AI-based Paper Evaluation System. The project has evolved through multiple feature requests and refactoring efforts.
+<analysis>**original_problem_statement**: The user initially wanted to build and deploy an agentic WhatsApp chatbot for parents to inquire about their child's academic performance. After completing that, the user requested to add new educational content from a provided PDF, including a new chapter, AI-generated content, two tests, and two homework assignments. Subsequently, the user reported a bug where evaluating these newly created tests was failing.
 
-Recent requests from this session included:
-1.  **Polishing UI**: Make the AI Homework creator UI identical to the AI Test creator UI and refine shared components like buttons and input fields.
-2.  **Optimize Hint System**: Pre-generate AI hints when a teacher publishes homework and store them in the database to avoid costly, repetitive LLM calls when students ask for help. Improve hint quality to be more logical and less generic.
-3.  **Improve Student Interaction**: Replace the Reveal Answer button with a Check Answer button for homework questions. Implement a more interactive Match the Following question UI using dropdowns for students.
-4.  **Refine Flashcards**: Update the AI prompt for flashcard generation to produce concise, 1-2 word answers and replace the icon.
-5.  **Simplify Authentication**: Remove the Register as Teacher form and all backend OTP-based password reset functionality, directing users to contact an admin instead.
-6.  **Fix Feature Gaps**: Ensure published AI homework is visible on the teacher's dashboard and that AI homework statistics are included in the parent's dashboard.
-7.  **Remove Legacy Code**: Completely delete the old PDF-based homework system from the frontend and backend.
-8.  **Improve Mobile Responsiveness**: Adjust layouts for Teacher, Student, and Parent views to ensure they are usable on mobile screens.
+**PRODUCT REQUIREMENTS**:
+1.  **WhatsApp Chatbot**:
+    *   Must be agentic, using Sarvam AI to understand and respond to parent queries.
+    *   Must support English, Hindi (in Devanagari script), and Gujarati (in Gujarati script), including when the user types in Latin/Roman script.
+    *   Must introduce itself as StudyBuddy PTM Agent with a professional, teacher-like tone.
+    *   Must handle generic greetings and specific questions differently on the first message.
+    *   Formatting should be clean, without unnecessary bolding.
+2.  **Content Creation**:
+    *   Add a new chapter, Rational Numbers, for Mathematics (Standard 8, School KV) from a user-provided PDF.
+    *   Generate AI content (summaries, notes) for this chapter.
+    *   Create two tests of 10 questions each.
+    *   Create two homework assignments of 5 questions each.
+3.  **UI/UX**:
+    *   Replace the default Flashcards icon with a custom image of three ACE cards.
+4.  **Bug Fix**:
+    *   Resolve the  error that occurs when a student attempts a test created via API.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a full-stack AI-powered Learning Management System (LMS) with a modular codebase. It features AI-driven test and homework creation/solving capabilities, along with dedicated views for Teachers, Students, and Parents. The AI homework system is now optimized with pre-generated hints stored in the database and includes a Check Answer feature. The authentication flow has been simplified to be admin-centric, removing self-registration for teachers and OTP-based password resets. The legacy PDF-based homework system has been completely decommissioned and removed from the codebase. The UI has undergone significant polishing and improvements for mobile responsiveness.
+The application is a full-stack LMS with a fully functional, agentic WhatsApp chatbot integrated with Sarvam AI for multi-language support. A new chapter, Rational Numbers (Math, Std 8), has been created via API, along with its associated tests and homework. However, a bug exists that prevents the evaluation of these newly created tests and homework due to an incorrect data format in the  field of the questions in the database.
 
 **Last working item**:
-- **Last item agent was working**: Improving the mobile responsiveness of the Teacher, Student, and Parent dashboards.
-- **Status**: USER VERIFICATION PENDING
+- **Last item agent was working**: Fixing a bug where tests created via API were failing during evaluation with a . The agent identified that questions were created with  in an incorrect format (e.g.,  as a list instead of a dict,  key instead of ). After fixing the test questions, the agent discovered the homework questions were also malformed or missing entirely and was in the process of recreating them correctly.
+- **Status**: IN PROGRESS
 - **Agent Testing Done**: N
-- **Which testing method agent to use?**: frontend testing agent
+- **Which testing method agent to use?**: backend testing agent
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-- **Issue 1**: Verify mobile responsiveness improvements. (P0)
+- **Issue 1**: Fix the test evaluation failure for API-created content. (P0)
+- **Issue 2**: Assist user with EC2 deployment, specifically ensuring the new  is added to their environment. (P1)
+- **Issue 3**: The fix for the bot identifying a teacher instead of a student (by only searching ) has not been confirmed on the user's EC2 instance. (P2)
 
 **Issues Detail**:
-- **Issue 1**:
-    - **Description (P0)**: The user reported that horizontal elements like tabs in the teacher view and long cards in the student view do not fit on mobile screens. The agent implemented responsive CSS to make these elements stack or wrap. These changes need to be verified.
-    - **Attempted fixes**: The agent added multiple  queries to  and applied new CSS classes to components like , , and  to create responsive layouts (e.g., flex-direction changing to column on small screens).
+- **Issue 1**: Evaluation failed: string indices must be integers, not 'str'
+    - **Attempted fixes**: The agent correctly identified the root cause: MCQs created via API had  as a list instead of a labeled dictionary (e.g., ) and used the key  instead of . The agent successfully ran a script to update the  table to fix the tests. It then found that  records were either missing or also malformed and began recreating them.
     - **Next debug checklist**:
-        1.  Log in as a teacher and take a screenshot of the dashboard using a mobile viewport (e.g., 375x667) to confirm the main tabs stack vertically.
-        2.  Log in as a student and navigate to the homework/tests list. Take a screenshot on a mobile viewport to confirm the cards are displayed correctly without horizontal overflow.
-        3.  Log in as a parent and take a screenshot of the dashboard on a mobile viewport to confirm the chart legends and other elements are responsive.
-        4.  If any issues are found, review the new CSS in  and the corresponding JSX files to adjust the responsive styles.
-    - **Why fix this issue and what will be achieved with the fix?**: To ensure the application is usable and provides a good user experience on mobile devices, fulfilling a direct user request.
-    - **Status**: USER VERIFICATION PENDING
+        1.  Verify that all questions for both newly created homework assignments ( & ) exist in the  table and have the correct  format.
+        2.  Create a backend test script () that simulates a student submitting answers to one of the newly created tests to confirm the fix.
+        3.  The test should:
+            *   Log in as a student enrolled in Std 8, School KV.
+            *   Fetch the questions for the test .
+            *   Construct an answer payload.
+            *   POST to the  endpoint.
+            *   Assert that the response is a  and not a .
+    - **Why fix this issue and what will be achieved with the fix?**: This is a critical bug blocking the core functionality of the content just created. Fixing it will make the new tests and homework evaluatable for students.
+    - **Status**: IN PROGRESS
     - **Is recurring issue?**: N
-    - **Should Test frontend/backend/both after fix?**: Frontend
-    - **Blocked on other issue**: None.
+    - **Should Test frontend/backend/both after fix?**: Backend
+    - **Blocked on other issue**: None
+
+- **Issue 2**: User EC2 Deployment
+    - **Description (P1)**: The user consistently faces issues deploying updates to their EC2 instance, primarily related to environment variables. The migration to Sarvam AI introduced a new  that the user needs to add.
+    - **Attempted fixes**: The agent created and updated 
+[0;34m========================================[0m
+[0;34m  StudyBuddy WhatsApp Demo Setup[0m
+[0;34m========================================[0m
+
+[0;32mDetected: Emergent preview environment[0m
+Using env file: [1;33m/app/backend/.env[0m
+
+[0;34mCurrent Configuration:[0m
+  WhatsApp Token: [1;33mEAANSIehahqEBQ3...[0m
+  Base URL:       [0;31mNot set[0m
+  Sarvam Key:     [1;33msk_62hpfut7_AK5...[0m
+
+[0;34mWhat would you like to update?[0m
+  1) WhatsApp Access Token
+  2) ngrok/Public URL (Base URL)
+  3) Sarvam AI API Key
+  4) All of the above
+  5) Clear WhatsApp chat history (for fresh testing)
+  6) Exit to manage credentials, including an option for the Sarvam key.
+    - **Next debug checklist**: Guide the user to run 
+[0;34m========================================[0m
+[0;34m  StudyBuddy WhatsApp Demo Setup[0m
+[0;34m========================================[0m
+
+[0;32mDetected: Emergent preview environment[0m
+Using env file: [1;33m/app/backend/.env[0m
+
+[0;34mCurrent Configuration:[0m
+  WhatsApp Token: [1;33mEAANSIehahqEBQ3...[0m
+  Base URL:       [0;31mNot set[0m
+  Sarvam Key:     [1;33msk_62hpfut7_AK5...[0m
+
+[0;34mWhat would you like to update?[0m
+  1) WhatsApp Access Token
+  2) ngrok/Public URL (Base URL)
+  3) Sarvam AI API Key
+  4) All of the above
+  5) Clear WhatsApp chat history (for fresh testing)
+  6) Exit on their EC2 instance and select the option to add/update the .
+    - **Why fix this issue and what will be achieved with the fix?**: Unblocks user testing in their own environment.
+    - **Status**: NOT STARTED
+    - **Is recurring issue?**: Y
+    - **Should Test frontend/backend/both after fix?**: Backend
+
+- **Issue 3**: Verify parent phone number bug fix on EC2.
+    - **Description (P2)**: An old bug where a shared phone number between a teacher and parent caused the bot to misidentify the user was fixed, but the user has not been able to verify it on their EC2 instance.
+    - **Status**: USER VERIFICATION PENDING
+    - **Is recurring issue?**: Y
+    - **Should Test frontend/backend/both after fix?**: Backend
 
 **In progress Task List**:
 None.
 
 **Upcoming and Future Tasks**
+- **Upcoming Tasks**:
+    - **(P1)** Fix minor PDF extraction flaws in the PYQ feature.
+    - **(P1)** Fix AdminDashboard Login As User search display bug.
 - **Future Tasks**:
-    - **Fix Minor PDF Extraction Flaws (P2)**: Address any remaining formatting issues in features that still use PDF extraction, such as for study materials (PYQ).
-    - **Implement Redis Caching (P3)**: Configure Redis to improve application performance and resolve benign connection errors currently appearing in backend logs.
-    - **Cleanup Dead Code (P3)**: Remove unused OTP-related schemas and service functions from  that were left over after the routes were deleted.
+    - **(P2)** Implement Redis caching to improve performance.
+    - **(P2)** Add a more comprehensive automated test suite for the backend.
+    - **(P3)** Enhance the Teacher Review Mode.
 
 **Completed work in this session**
-- **AI Hint System Optimization (DONE)**:
-    - Reworked the AI homework feature to pre-generate hints upon publishing and store them in the database, eliminating on-demand LLM calls from students. Added  column to  table.
-- **Student Interaction Enhancements (DONE)**:
-    - Replaced the Reveal Answer button with a Check Answer feature in the student homework view.
-    - Redesigned the Match the Following question type to use dropdown selectors for a better user experience in both tests and homework.
-- **Authentication Flow Simplification (DONE)**:
-    - Removed the Register as Teacher functionality from the UI and backend.
-    - Completely removed the OTP-based password reset system from the UI and backend (). The flow now directs users to contact an administrator.
-- **Legacy Feature Removal (DONE)**:
-    - Deleted the entire PDF-based homework system, including the  file, related components in  and , and database queries in .
-- **UI/UX Improvements (DONE)**:
-    - Polished the AI Homework and Test creator UIs for visual consistency.
-    - Fixed poor contrast on AI homework cards in the student view.
-    - Updated flashcard generation prompt to produce 1-2 word answers and replaced the icon.
-- **Bug Fixes (DONE)**:
-    - Fixed an issue where published AI homework was not appearing on the teacher's dashboard by adding a  component.
-    - Updated the parent dashboard to correctly display stats for AI homework.
-- **Mobile Responsiveness (Implemented, Pending Verification)**: Added responsive CSS rules to make Teacher, Student, and Parent views adapt to mobile screen sizes.
+- **WhatsApp Bot Migration**: Migrated the chatbot's core LLM from OpenRouter (GPT-4o) to **Sarvam AI (sarvam-105b)**.
+- **Multi-Language & Native Script**: Implemented robust language detection (Hindi, Gujarati, English) and ensured the bot replies in the correct native script (Devanagari/Gujarati), even when the user types in Roman/Latin characters. Logic was added to reset chat history on language switch to ensure context doesn't override the language choice.
+- **Chatbot Persona Refinement**: Updated the bot's system prompt to adopt a StudyBuddy PTM Agent persona with a professional, teacher-like tone and a specific introduction flow for first-time messages.
+- **Chatbot Formatting Fix**: Removed unnecessary  (bold) characters from the chatbot's responses.
+- **Content Creation from PDF**:
+    - Added a new subject Mathematics for Standard 8, School KV.
+    - Added a new chapter Rational Numbers from the user's PDF.
+    - Uploaded the PDF and triggered the background AI content generation.
+    - Created two 10-question tests and two 5-question homework assignments for the chapter via API calls.
+- **Credential Management Script**: Created and enhanced 
+[0;34m========================================[0m
+[0;34m  StudyBuddy WhatsApp Demo Setup[0m
+[0;34m========================================[0m
+
+[0;32mDetected: Emergent preview environment[0m
+Using env file: [1;33m/app/backend/.env[0m
+
+[0;34mCurrent Configuration:[0m
+  WhatsApp Token: [1;33mEAANSIehahqEBQ3...[0m
+  Base URL:       [0;31mNot set[0m
+  Sarvam Key:     [1;33msk_62hpfut7_AK5...[0m
+
+[0;34mWhat would you like to update?[0m
+  1) WhatsApp Access Token
+  2) ngrok/Public URL (Base URL)
+  3) Sarvam AI API Key
+  4) All of the above
+  5) Clear WhatsApp chat history (for fresh testing)
+  6) Exit to manage WhatsApp, ngrok, OpenRouter, and now Sarvam API keys.
+- **UI Icon Update**: Replaced the Flashcards text icon with a custom-generated image of ACE cards.
+- **Code Cleanup**: Removed the old, unused  function and its dependencies from .
+- **Bug Investigation**: Started the investigation and partial fix for the test evaluation .
 
 **Earlier issues found/mentioned but not fixed**
-- **Issue 1**: Admin dashboard on the EC2 instance appears empty. This is known and expected behavior, as the EC2 instance uses a separate, unseeded database. This is a low-priority item.
+- The test evaluation bug is the main one, currently in progress.
 
 **Known issue recurrence from previous fork**
-- None.
+- User struggles with EC2 environment setup and credential management. The  script is the primary mitigation for this.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Background Task Execution**: Using FastAPI's  to offload expensive, long-running operations (like LLM hint generation) from the main request-response cycle.
-- **Database-Centric Design**: Shifting from dynamic, costly API calls to serving pre-generated, static content from the database to improve performance and reduce operational costs.
-- **Responsive Web Design**: Utilizing CSS  queries and flexible layouts to create a UI that adapts gracefully to different screen sizes.
-- **Legacy Code Removal**: Systematically identifying and deleting a deprecated feature (PDF homework) across the entire stack, including backend routes, frontend components, and database interactions.
-- **Database Schema Migration**: Using Alembic to safely add a new column () to an existing table in the production database.
+- **LLM Migration**: Switching the core LLM from OpenRouter (GPT-4o) to Sarvam AI () by changing the API endpoint, authentication header, and model name in .
+- **Rule-Based Language Detection**: Implemented a simple but effective language detection function () in  based on keyword matching for Roman-script Hindi and Gujarati to force the LLM to reply in the correct native script.
+- **Context Management for Language Switching**: When a language switch is detected, the chat history sent to the LLM is cleared to prevent the previous language context from influencing the response.
+- **API-Driven Content Creation**: Using a series of  commands in a bash script to programmatically create subjects, chapters, tests, and homework via the application's own API endpoints. This highlighted the importance of ensuring the API payload format matches the application's internal data structures precisely.
+- **Database Debugging**: Using  scripts to directly query the PostgreSQL database with SQLAlchemy to inspect the malformed  in  and  tables.
 
 **key DB schema**
-- : Added column .
+- **StructuredQuestion**: { id, test_id, question_text, question_type, : JSON, ... } -  was the source of the bug.
+- **StructuredHomeworkQuestion**: { id, homework_id, question_text, question_type, : JSON, ... } - Also affected by the bug.
 
 **changes in tech stack**
-- None.
+- **LLM Provider**: Switched from OpenRouter (GPT-4o) to **Sarvam AI**.
 
 **All files of reference**
--  (Contains all new responsive styles)
--  (Cleanup and responsive changes)
--  (Cleanup and responsive changes)
--  (Responsive changes)
--  (New check-answer and hint generation logic)
--  (OTP and teacher registration code removed)
--  (Schema updated with )
--  (New student-facing features)
-- **DELETED**: 
+-  (core logic for the chatbot)
+-  (endpoint for creating tests)
+-  (endpoint for creating homework)
+-  (defines the DB schema)
+- 
+[0;34m========================================[0m
+[0;34m  StudyBuddy WhatsApp Demo Setup[0m
+[0;34m========================================[0m
+
+[0;32mDetected: Emergent preview environment[0m
+Using env file: [1;33m/app/backend/.env[0m
+
+[0;34mCurrent Configuration:[0m
+  WhatsApp Token: [1;33mEAANSIehahqEBQ3...[0m
+  Base URL:       [0;31mNot set[0m
+  Sarvam Key:     [1;33msk_62hpfut7_AK5...[0m
+
+[0;34mWhat would you like to update?[0m
+  1) WhatsApp Access Token
+  2) ngrok/Public URL (Base URL)
+  3) Sarvam AI API Key
+  4) All of the above
+  5) Clear WhatsApp chat history (for fresh testing)
+  6) Exit (for user credential management)
+-  (UI file for flashcard icon)
 
 **Areas that need refactoring**:
-- Dead code related to OTP (schemas, service functions) still exists in the backend, although it is no longer referenced and does not cause errors. This could be cleaned up.
+- The logs show a recurring  when dealing with passwords. While the agent worked around it by resetting passwords, this suggests a potential version mismatch or issue with the  or  libraries that should be investigated to prevent future authentication problems.
 
 **key api endpoints**
-- **NEW**: 
-- **MODIFIED**:
-    -  (Now triggers background hint generation)
-    -  (Now serves from DB)
-- **DELETED**:
-    - All endpoints under the  prefix.
-    - , , , , .
+-  (Used to create tests, source of the bug)
+-  (Used to create homework, source of the bug)
+-  (Endpoint that fails due to the bug)
+-  (Main chatbot endpoint)
+-  (Used to upload the PDF)
+-  (Used to trigger AI generation)
 
 **Critical Info for New Agent**
-- **Verify Mobile UI First**: The immediate priority is to verify the mobile responsiveness changes made in the last step. Use screenshots with a mobile viewport for the teacher, student, and parent views.
-- **PDF Homework is Gone**: The old PDF-based homework system has been completely removed. Do not attempt to find or modify any code related to it.
-- **Auth is Admin-Centric**: Teacher self-registration and OTP password resets are disabled. All user management is handled by an admin.
-- **Hints are Pre-Generated**: The AI homework system no longer calls an LLM for hints in real-time. Hints are generated once when the homework is published and stored in the database.
+- **The immediate priority is to fix the test evaluation bug.** The root cause is known (incorrect  format for MCQs). You need to finish fixing the homework questions and then create a definitive test to verify a student can submit an evaluation without a  error.
+- The chatbot now uses **Sarvam AI**, not OpenRouter. The user's EC2 instance will need the  added to its  file. Guide the user to do this with the  script.
+- The chatbot's language handling is complex. It detects language from Roman script and clears chat history on a language switch. Be careful not to break this logic.
 
 **documents and test reports created in this job**
 - 
 - 
-- An alembic migration file for the  column located in .
--  (updated multiple times to reflect completed work).
+[0;34m========================================[0m
+[0;34m  StudyBuddy WhatsApp Demo Setup[0m
+[0;34m========================================[0m
+
+[0;32mDetected: Emergent preview environment[0m
+Using env file: [1;33m/app/backend/.env[0m
+
+[0;34mCurrent Configuration:[0m
+  WhatsApp Token: [1;33mEAANSIehahqEBQ3...[0m
+  Base URL:       [0;31mNot set[0m
+  Sarvam Key:     [1;33msk_62hpfut7_AK5...[0m
+
+[0;34mWhat would you like to update?[0m
+  1) WhatsApp Access Token
+  2) ngrok/Public URL (Base URL)
+  3) Sarvam AI API Key
+  4) All of the above
+  5) Clear WhatsApp chat history (for fresh testing)
+  6) Exit (updated)
+- 
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User**:  - **DONE**
-2.  **User**:  - **DONE**
-3.  **User**:  - **DONE**
-4.  **User**:  - **DONE**
-5.  **User**:  - **DONE**
-6.  **User**:  - **DONE**
-7.  **User**:  - **DONE**
-8.  **User**:  - **DONE**
-9.  **User**:  (student view contrast issue) - **DONE**
-10. **User**:  - **DONE**
-11. **User**:  - **IN PROGRESS (Verification Pending)**
+1.  **User**: Asks to use Sarvam AI instead of OpenRouter. **Status**: Done.
+2.  **User**: Reports Gujarati replies are in Latin font. **Status**: Done (fixed with language detection).
+3.  **User**: Provides screenshot showing Latin Gujarati reply. **Status**: Done (fixed by improving language detection keywords).
+4.  **User**: Reports no response from bot. **Status**: Resolved (guided user to add new Sarvam API key on EC2).
+5.  **User**: Reports unnecessary  formatting and asks for a PTM Agent persona. **Status**: Done.
+6.  **User**: Clarifies the PTM agent's introduction flow. **Status**: Done.
+7.  **User**: Provides a PDF and asks to create a chapter, tests, and homework. **Status**: Done.
+8.  **User**: Asks to change the flashcard icon to ACE cards. **Status**: Done.
+9.  **User**: Asks why test evaluation is failing with a . **Status**: **IN PROGRESS**. This is the current active issue.
 
 **Project Health Check:**
-- **Broken**: None
-- **Mocked**: None
+- **Broken**: The core feature of test/homework evaluation is broken for any content created via the API script used in this session.
+- **Mocked**: None.
 
 **3rd Party Integrations**
-*   PostgreSQL: Database.
-*   AWS S3: File storage.
-*   OpenRouter: For AI evaluation (e.g., ).
-*   Nginx: Reverse proxy.
-*   GitHub Actions: CI/CD.
+-   **Meta WhatsApp Business API**: For sending/receiving messages.
+-   **Sarvam AI**: Used for agentic chat completions and tool calling. Requires .
+-   **ngrok**: Used for tunneling.
+-   PostgreSQL: Database.
+-   AWS S3: File storage.
 
 **Testing status**
-- **Testing agent used after significant changes**: YES, the testing agent was used multiple times to validate backend and frontend changes.
+- **Testing agent used after significant changes**: YES, for the initial chatbot functionality.
 - **Troubleshoot agent used after agent stuck in loop**: NO
-- **Test files created**: None.
-- **Known regressions**: None.
+- **Test files created**: None. A test file for the evaluation bug is recommended.
+- **Known regressions**: The API-driven content creation process introduced a data-format bug.
 
 **Credentials to test flow:**
-*   **Admin**: username , password 
-*   **Teacher/Student**: Can be registered through the admin user dashboard or by querying the  table to find existing test accounts.
+- **Admin**: username , password 
+- **Teacher T1 (KV School)**: roll\_no , password 
+- **Student S1 (KV School)**: roll\_no , password 
 
 **What agent forgot to execute**
-- The agent successfully completed all user requests. A minor pending cleanup is the removal of dead OTP-related code (schemas, service functions) in the backend, which is a low-priority refactoring task.</analysis>
+- The agent started fixing the malformed homework questions but did not fully complete or verify the fix across all created homework.
+- The agent did not create an automated test to reproduce and confirm the fix for the evaluation error, relying on manual checks of the database.</analysis>
