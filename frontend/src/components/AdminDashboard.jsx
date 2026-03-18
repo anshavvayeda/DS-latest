@@ -856,11 +856,172 @@ const UserList = ({ users, onRefresh, onToggleActive, onDelete }) => {
   );
 };
 
+// Edit User Profile Component
+const EditUserProfile = ({ onCancel }) => {
+  const [searchRollNo, setSearchRollNo] = useState('');
+  const [foundUser, setFoundUser] = useState(null);
+  const [editData, setEditData] = useState({});
+  const [searching, setSearching] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const searchUser = async () => {
+    if (!searchRollNo.trim()) return;
+    setSearching(true);
+    setError('');
+    setFoundUser(null);
+    try {
+      const res = await axios.get(`${API}/admin/search-user/${searchRollNo.trim()}`, { withCredentials: true });
+      setFoundUser(res.data);
+      setEditData({
+        name: res.data.name || '',
+        school_name: res.data.school_name || '',
+        standard: res.data.standard || '',
+        role: res.data.role || 'student',
+        email: res.data.email || '',
+        phone: res.data.phone || '',
+        parent_phone: res.data.parent_phone || '',
+        gender: res.data.gender || 'other',
+        is_active: res.data.is_active !== false,
+      });
+    } catch (err) {
+      setError(extractErrorMessage(err, 'User not found'));
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError('');
+    setSuccess('');
+    try {
+      const payload = { ...editData };
+      if (payload.standard) payload.standard = parseInt(payload.standard);
+      payload.login_phone = payload.phone;
+      delete payload.phone;
+      const res = await axios.put(`${API}/admin/update-user/${foundUser.roll_no}`, payload, { withCredentials: true });
+      setSuccess(res.data.message);
+      setFoundUser({ ...foundUser, ...res.data.user });
+      setTimeout(() => setSuccess(''), 4000);
+    } catch (err) {
+      setError(extractErrorMessage(err, 'Update failed'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setEditData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+  };
+
+  return (
+    <div className="form-container" data-testid="edit-user-form">
+      <div className="form-header">
+        <h3>Edit User Profile</h3>
+        <button className="btn-cancel" onClick={onCancel}>Back</button>
+      </div>
+      <p className="tab-description">Search for a user by roll number and edit their details</p>
+
+      <div className="search-user-section">
+        <div className="search-row">
+          <input
+            type="text"
+            placeholder="Enter Roll Number (e.g., S001, teacher4)"
+            value={searchRollNo}
+            onChange={(e) => setSearchRollNo(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && searchUser()}
+            className="search-input"
+            data-testid="edit-user-rollno-input"
+          />
+          <button onClick={searchUser} disabled={searching} className="btn-search" data-testid="edit-user-search-btn">
+            {searching ? 'Searching...' : 'Search'}
+          </button>
+        </div>
+      </div>
+
+      {error && <div className="form-error">{error}</div>}
+      {success && <div className="form-success" style={{background:'rgba(34,197,94,0.15)',color:'#22c55e',padding:'12px',borderRadius:'8px',marginBottom:'16px',fontWeight:'600'}}>{success}</div>}
+
+      {foundUser && (
+        <div className="edit-user-fields" style={{marginTop:'20px'}}>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Name</label>
+              <input type="text" name="name" value={editData.name} onChange={handleChange} className="form-input" data-testid="edit-user-name" />
+            </div>
+            <div className="form-group">
+              <label>Roll No</label>
+              <input type="text" value={foundUser.roll_no} disabled className="form-input" style={{opacity:0.6}} />
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Role</label>
+              <select name="role" value={editData.role} onChange={handleChange} className="form-input" data-testid="edit-user-role">
+                <option value="student">Student</option>
+                <option value="teacher">Teacher</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Standard/Class</label>
+              <select name="standard" value={editData.standard} onChange={handleChange} className="form-input" data-testid="edit-user-standard">
+                <option value="">N/A</option>
+                {[1,2,3,4,5,6,7,8,9,10,11,12].map(s => <option key={s} value={s}>Class {s}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>School Name</label>
+              <input type="text" name="school_name" value={editData.school_name} onChange={handleChange} className="form-input" data-testid="edit-user-school" />
+            </div>
+            <div className="form-group">
+              <label>Gender</label>
+              <select name="gender" value={editData.gender} onChange={handleChange} className="form-input" data-testid="edit-user-gender">
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Phone</label>
+              <input type="text" name="phone" value={editData.phone} onChange={handleChange} className="form-input" data-testid="edit-user-phone" />
+            </div>
+            <div className="form-group">
+              <label>Parent Phone</label>
+              <input type="text" name="parent_phone" value={editData.parent_phone} onChange={handleChange} className="form-input" data-testid="edit-user-parent-phone" />
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Email</label>
+              <input type="text" name="email" value={editData.email} onChange={handleChange} className="form-input" data-testid="edit-user-email" />
+            </div>
+            <div className="form-group" style={{display:'flex',alignItems:'center',gap:'10px',paddingTop:'24px'}}>
+              <input type="checkbox" name="is_active" checked={editData.is_active} onChange={handleChange} data-testid="edit-user-active" />
+              <label style={{margin:0}}>Active</label>
+            </div>
+          </div>
+          <button onClick={handleSave} disabled={saving} className="btn-submit" data-testid="edit-user-save-btn" style={{marginTop:'16px',width:'100%'}}>
+            {saving ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Main Admin Dashboard Component
 const AdminDashboard = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState('users');
   const [showSingleForm, setShowSingleForm] = useState(false);
   const [showBulkForm, setShowBulkForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -907,6 +1068,7 @@ const AdminDashboard = ({ onLogout }) => {
     setMessage(data.message || 'Registration successful');
     setShowSingleForm(false);
     setShowBulkForm(false);
+    setShowEditForm(false);
     fetchUsers();
     setTimeout(() => setMessage(''), 3000);
   };
@@ -1205,7 +1367,7 @@ const AdminDashboard = ({ onLogout }) => {
           />
         )}
 
-        {activeTab === 'register' && !showSingleForm && !showBulkForm && (
+        {activeTab === 'register' && !showSingleForm && !showBulkForm && !showEditForm && (
           <div className="register-options">
             <div className="register-card" onClick={() => setShowSingleForm(true)}>
               <div className="card-icon">
@@ -1229,6 +1391,16 @@ const AdminDashboard = ({ onLogout }) => {
               <h3>Bulk Registration</h3>
               <p>Register multiple students at once using a table format</p>
             </div>
+            <div className="register-card" onClick={() => setShowEditForm(true)} data-testid="edit-user-card">
+              <div className="card-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </div>
+              <h3>Edit User Profile</h3>
+              <p>Search and update details of any registered user</p>
+            </div>
           </div>
         )}
 
@@ -1243,6 +1415,12 @@ const AdminDashboard = ({ onLogout }) => {
           <BulkRegistration
             onSuccess={handleRegistrationSuccess}
             onCancel={() => setShowBulkForm(false)}
+          />
+        )}
+
+        {activeTab === 'register' && showEditForm && (
+          <EditUserProfile
+            onCancel={() => setShowEditForm(false)}
           />
         )}
 

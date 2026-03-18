@@ -1,5 +1,5 @@
 """Auth & Admin routes."""
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Response, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, delete, desc
 from pydantic import BaseModel, validator
@@ -742,6 +742,65 @@ async def admin_search_user_by_rollno(
         "phone": user.phone if user else None,
         "email": profile.email
     }
+
+
+@router.put("/admin/update-user/{roll_no}")
+async def admin_update_user(
+    roll_no: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    """Admin: Update any user's profile details by roll_no"""
+    body = await request.json()
+
+    profile_result = await db.execute(
+        select(StudentProfile).where(StudentProfile.roll_no == roll_no)
+    )
+    profile = profile_result.scalars().first()
+    if not profile:
+        raise HTTPException(status_code=404, detail=f"User with roll no '{roll_no}' not found")
+
+    user_result = await db.execute(select(User).where(User.id == profile.user_id))
+    user = user_result.scalars().first()
+
+    # Updatable profile fields
+    for field in ["name", "school_name", "email", "login_phone", "parent_phone", "gender"]:
+        if field in body and body[field] is not None:
+            setattr(profile, field, body[field])
+
+    if "standard" in body:
+        profile.standard = int(body["standard"]) if body["standard"] else None
+
+    # Update role on User table
+    if "role" in body and body["role"] in ("student", "teacher"):
+        user.role = body["role"]
+
+    # Update active status
+    if "is_active" in body and user:
+        user.is_active = bool(body["is_active"])
+
+    profile.updated_at = datetime.now(timezone.utc)
+    await db.commit()
+
+    return {
+        "message": f"User '{roll_no}' updated successfully",
+        "user": {
+            "user_id": str(user.id),
+            "name": profile.name,
+            "roll_no": profile.roll_no,
+            "standard": profile.standard,
+            "school_name": profile.school_name,
+            "role": user.role,
+            "is_active": user.is_active,
+            "phone": user.phone,
+            "login_phone": profile.login_phone,
+            "parent_phone": profile.parent_phone,
+            "email": profile.email,
+            "gender": profile.gender,
+        }
+    }
+
 
 # =============================================================================
 # SCHOOL MANAGEMENT ROUTES
