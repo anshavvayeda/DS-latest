@@ -448,7 +448,7 @@ def _detect_language(text: str) -> str:
     ]
     hindi_markers = [
         # Common verbs & auxiliaries
-        "hai", "hain", "tha", "thi", "the", "hoga", "hogi",
+        "hai", "hain", "tha", "thi", "hoga", "hogi",
         "karo", "karna", "karke", "kiya", "kiye", "karunga",
         "batao", "bataiye", "bataen", "batana", "dikhao",
         "raha", "rahi", "rahe",
@@ -459,7 +459,7 @@ def _detect_language(text: str) -> str:
         # Question words
         "kya", "kaise", "kaisa", "kaisi", "kab", "kahan", "kyun", "kitna", "kitni", "kitne",
         # Common words
-        "aur", "bhi", "toh", "lekin", "ya", "se", "ko", "ka", "ki", "ke",
+        "aur", "bhi", "toh", "lekin", "iska", "iski",
         "acha", "acchi", "thik", "bahut", "bohot",
         "haan", "nahi", "nahin", "mat",
         # Family & school terms
@@ -552,11 +552,43 @@ TONE: Friendly, warm, professional. Like a helpful school coordinator. Not robot
 
     messages = [{"role": "system", "content": system_prompt}]
 
-    # Add chat history (excluding current message)
-    for h in chat_history[:-1] if chat_history else []:
+    # Manage chat history with language-awareness
+    history_to_use = chat_history[:-1] if chat_history else []
+
+    # Check if language has switched from previous assistant response
+    if history_to_use and detected_lang in ("hindi", "gujarati"):
+        last_assistant_msgs = [h for h in history_to_use if h["role"] == "assistant"]
+        if last_assistant_msgs:
+            last_resp = last_assistant_msgs[-1]["content"]
+            last_had_gujarati = any('\u0A80' <= c <= '\u0AFF' for c in last_resp)
+            last_had_devanagari = any('\u0900' <= c <= '\u097F' for c in last_resp)
+            lang_switched = (
+                (detected_lang == "hindi" and last_had_gujarati) or
+                (detected_lang == "gujarati" and last_had_devanagari)
+            )
+            if lang_switched:
+                history_to_use = []  # Clean slate on language switch
+
+    # Cap at last 4 messages for focused context
+    history_to_use = history_to_use[-4:]
+
+    for h in history_to_use:
         messages.append({"role": h["role"], "content": h["content"]})
 
-    messages.append({"role": "user", "content": user_message})
+    # Inject strong language directive right before user message to override chat history context
+    if detected_lang == "gujarati":
+        messages.append({"role": "system", "content": "IMPORTANT: The next message is in GUJARATI. You MUST reply ONLY in Gujarati script (ગુજરાતી). NOT Latin. NOT Hindi. Example: 'તમારા બાળકનું હોમવર્ક પૂર્ણ છે'."})
+        user_msg_with_hint = f"[Reply in ગુજરાતી script ONLY]\n{user_message}"
+    elif detected_lang == "hindi":
+        messages.append({"role": "system", "content": "IMPORTANT: The next message is in HINDI. You MUST reply ONLY in Devanagari script (हिंदी). NOT Latin. NOT Gujarati. Example: 'आपके बच्चे का होमवर्क पूरा है'."})
+        user_msg_with_hint = f"[Reply in हिंदी Devanagari script ONLY]\n{user_message}"
+    elif detected_lang == "english":
+        messages.append({"role": "system", "content": "IMPORTANT: The next message is in ENGLISH. You MUST reply ONLY in English."})
+        user_msg_with_hint = user_message
+    else:
+        user_msg_with_hint = user_message
+
+    messages.append({"role": "user", "content": user_msg_with_hint})
 
     # Agent loop — Sarvam AI can call tools and then we feed results back
     for loop_i in range(MAX_AGENT_LOOPS):
