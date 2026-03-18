@@ -425,15 +425,21 @@ def _detect_language(text: str) -> str:
         "aenu", "aeni", "aena", "ena", "eni", "eno",
         # Question words
         "shu", "kem", "kyare", "kyan", "ketlu", "ketli", "ketla", "kevi", "kevu", "kevo",
+        "kaya", "kayo", "kayi", "kon", "kone",
         # Common words
-        "ane", "pan", "nathi", "nahi", "haa", "na", "to", "thi", "ma", "par",
+        "ane", "pan", "nathi", "nahi", "haa", "na", "to", "thi", "ma", "par", "nu", "ni", "no",
         "saras", "saru", "kharu", "maja", "bahu", "badhu", "badha",
+        "tamne", "tame", "amne", "ame", "apne",
         # Family & school terms
         "bachchu", "bachcha", "chhokro", "chhokri", "dikri", "dikro", "dikra",
         "bhai", "bahen", "mummy", "papa", "shikshan", "shala", "school",
         "padhai", "abhyas", "pariksha", "result", "marks",
+        "bija", "biji", "biju",
         # Greetings
         "kem cho", "majama", "aavjo",
+        # Verbs
+        "joiye", "joi", "jovu", "batavu", "janvu", "samjavu",
+        "gayo", "gai", "gayu", "avyu", "avyo", "avi",
         # Common phrases (multi-word)
         "su che", "kevu che", "kevi che", "kevo che",
         "batavo ne", "kaho ne", "janavo ne",
