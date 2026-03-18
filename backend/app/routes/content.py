@@ -17,7 +17,7 @@ from app.models.database import (
     get_db, User, Subject, Chapter, Test, TestQuestion,
     StudentProfile, StudentPerformance, StudentExamScore,
     StudentPracticeProgress, StudentHomeworkStatus, AsyncSessionLocal,
-    PreviousYearPaper, AICache
+    PreviousYearPaper, AICache, Content
 )
 from app.deps import (
     get_current_user, get_optional_user, require_teacher, require_admin,
