@@ -1351,7 +1351,7 @@ function StudentView({ user, language, isTeacherPreview = false }) {
             <h3>{t('Revision Notes')}</h3>
           </div>
           <div className="tool-card" onClick={() => selectLearningTool('flashcards')} data-testid="tool-flashcards">
-            <div className="tool-icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="2" width="14" height="18" rx="2" /><rect x="4" y="4" width="14" height="18" rx="2" opacity="0.5"/><path d="M13 8l-2 3 2 3" /><circle cx="15" cy="7" r="1" fill="currentColor" /><circle cx="11" cy="17" r="1" fill="currentColor" /></svg></div>
+            <div className="tool-icon"><img src="/images/flashcard-ace-cards.png" alt="Flashcards" style={{width: '44px', height: '44px', objectFit: 'contain'}} /></div>
             <h3>{t('Flashcards')}</h3>
           </div>
           <div className="tool-card" onClick={() => selectLearningTool('quiz')} data-testid="tool-quiz">
