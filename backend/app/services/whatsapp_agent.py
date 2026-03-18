@@ -454,7 +454,7 @@ TONE: Friendly, warm, professional. Like a helpful school coordinator. Not robot
         try:
             async with httpx.AsyncClient(timeout=30) as client:
                 payload = {
-                    "model": "sarvam-30b",
+                    "model": "sarvam-105b",
                     "messages": messages,
                     "max_tokens": 500,
                     "temperature": 0.7,
