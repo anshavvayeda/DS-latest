@@ -75,15 +75,17 @@ async def handle_webhook(request: Request):
                     phone = msg["from"]  # sender phone number (without +)
                     text = msg["text"]["body"]
                     logger.info(f"WhatsApp message from {phone}: {text[:50]}")
+                    # Capture base_url from request before background task
+                    base_url = WHATSAPP_BASE_URL or str(request.base_url).rstrip("/")
                     # Process in background to respond to Meta quickly
                     import asyncio
-                    asyncio.create_task(_process_message(phone, text))
+                    asyncio.create_task(_process_message(phone, text, base_url))
 
     return {"status": "ok"}
 
 
-async def _process_message(phone: str, user_message: str):
-    """Process incoming message: identify student, fetch data, respond"""
+async def _process_message(phone: str, user_message: str, base_url: str = ""):
+    """Process incoming message using the agentic WhatsApp chatbot"""
     async with AsyncSessionLocal() as db:
         try:
             # 1. Find student by parent phone
@@ -109,9 +111,10 @@ async def _process_message(phone: str, user_message: str):
             # 5. Reload history with the new message included
             history = await _get_chat_history(db, phone)
 
-            # 6. Generate response via GPT-4o
-            response = await _generate_response(
-                user_message, brief, history, profile, is_first_message
+            # 6. Generate response via agentic WhatsApp agent
+            effective_base_url = base_url or _get_dashboard_base_url()
+            response = await run_agent(
+                user_message, history, is_first_message, db, profile, brief, effective_base_url
             )
 
             # 7. Save assistant response
@@ -668,3 +671,51 @@ async def public_parent_dashboard(token: str, db: AsyncSession = Depends(get_db)
 </body></html>"""
 
     return HTMLResponse(content=html)
+
+
+
+# =============================================================================
+# TEST ENDPOINT (Development only - simulates WhatsApp message processing)
+# =============================================================================
+@router.post("/test-message")
+async def test_whatsapp_message(request: Request, db: AsyncSession = Depends(get_db)):
+    """Test endpoint: simulates a WhatsApp message and returns the agent response directly"""
+    body = await request.json()
+    phone = body.get("phone", "")
+    message = body.get("message", "")
+
+    if not phone or not message:
+        raise HTTPException(status_code=400, detail="phone and message are required")
+
+    # 1. Find student
+    profile = await _find_student_by_parent_phone(db, phone)
+    if not profile:
+        return {"error": "Phone not registered as parent", "response": None}
+
+    # 2. Get brief
+    brief = await _get_or_refresh_brief(db, phone, profile)
+
+    # 3. Chat history
+    history = await _get_chat_history(db, phone)
+    is_first_message = len(history) == 0
+
+    # 4. Save user message
+    await _save_chat_message(db, phone, "user", message)
+
+    # 5. Reload history
+    history = await _get_chat_history(db, phone)
+
+    # 6. Get agent response
+    base_url = str(request.base_url).rstrip("/")
+    response = await run_agent(
+        message, history, is_first_message, db, profile, brief, base_url
+    )
+
+    # 7. Save response
+    await _save_chat_message(db, phone, "assistant", response)
+
+    return {
+        "student": profile.name,
+        "is_first_message": is_first_message,
+        "response": response,
+    }
