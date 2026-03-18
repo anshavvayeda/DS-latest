@@ -395,6 +395,51 @@ def _tool_dashboard_link(brief: WhatsappParentBrief, base_url: str) -> str:
 
 
 # =============================================================================
+# LANGUAGE DETECTION HELPER
+# =============================================================================
+def _detect_language(text: str) -> str:
+    """Detect language from message text. Returns 'hindi', 'gujarati', 'english', or 'unknown'."""
+    # Check for native scripts first
+    has_devanagari = any('\u0900' <= c <= '\u097F' for c in text)
+    has_gujarati = any('\u0A80' <= c <= '\u0AFF' for c in text)
+    if has_gujarati:
+        return "gujarati"
+    if has_devanagari:
+        return "hindi"
+
+    # For Latin-typed text, use keyword heuristics
+    lower = text.lower()
+    gujarati_markers = [
+        "che", "chhe", "kevu", "kevu", "kem", "maru", "taru", "tamaru",
+        "aenu", "ena", "eni", "chhu", "karvu", "batavo", "karo", "aavjo",
+        "shu", "ane", "pan", "nathi", "hatu", "hoy", "ketlu", "kevi",
+        "bachchu", "dikri", "dikro", "bhanu", "padhai", "shikshan",
+        "chokhkhu", "saras", "maja", "avi", "gayo", "gai", "karyu",
+    ]
+    hindi_markers = [
+        "hai", "kya", "kaise", "kaisa", "mera", "meri", "mere",
+        "bataiye", "batao", "karo", "karna", "raha", "rahi",
+        "bacche", "bachche", "padhai", "homework", "result",
+        "kaisa", "kaisi", "kab", "kahan", "kyun", "acha",
+        "haan", "nahi", "aur", "bhi", "toh", "iska",
+    ]
+
+    guj_count = sum(1 for w in gujarati_markers if w in lower.split() or f" {w} " in f" {lower} ")
+    hin_count = sum(1 for w in hindi_markers if w in lower.split() or f" {w} " in f" {lower} ")
+
+    if guj_count > hin_count and guj_count >= 1:
+        return "gujarati"
+    if hin_count > guj_count and hin_count >= 1:
+        return "hindi"
+    if guj_count > 0:
+        return "gujarati"
+    if hin_count > 0:
+        return "hindi"
+
+    return "english"
+
+
+# =============================================================================
 # AGENT LOOP
 # =============================================================================
 async def run_agent(
@@ -409,20 +454,30 @@ async def run_agent(
     """Run the agentic loop: Sarvam AI decides tools → execute → respond"""
     student_name = profile.name or "your child"
 
-    system_prompt = f"""You are StudyBuddy Parent Assistant, a WhatsApp chatbot agent that helps parents track their child's academic performance.
+    # Detect language of current message
+    detected_lang = _detect_language(user_message)
+    lang_instruction = ""
+    if detected_lang == "gujarati":
+        lang_instruction = "\n\n**DETECTED LANGUAGE: GUJARATI. You MUST respond ENTIRELY in Gujarati script (ગુજરાતી). Example: 'હોમવર્ક પૂરું થયું છે'. Do NOT use Hindi/Devanagari.**"
+    elif detected_lang == "hindi":
+        lang_instruction = "\n\n**DETECTED LANGUAGE: HINDI. You MUST respond ENTIRELY in Hindi Devanagari script (हिंदी). Example: 'होमवर्क पूरा हो गया है'. Do NOT use Latin/Roman text.**"
+    elif detected_lang == "english":
+        lang_instruction = "\n\n**DETECTED LANGUAGE: ENGLISH. You MUST respond ENTIRELY in English. Do NOT use Hindi or Gujarati.**"
+
+    system_prompt = f"""You are StudyBuddy Parent Assistant, a WhatsApp chatbot agent that helps parents track their child's academic performance.{lang_instruction}
 
 IDENTITY:
 - You are an intelligent agent with access to tools that fetch real-time data from the school database.
 - The student's name is *{student_name}* (Class {profile.standard}).
 
 ABSOLUTE RULES:
-1. LANGUAGE & SCRIPT: Detect the language of the parent's CURRENT message and respond ONLY in that language using its NATIVE SCRIPT.
-   - If message contains Devanagari (हिन्दी) → reply in Hindi using Devanagari script
-   - If message contains Gujarati script (ગુજરાતી) → reply in Gujarati using Gujarati script (ગુજરાતી લિપિ)
-   - If message is in English → reply in English
-   - If message mixes Hindi/English (Hinglish) → reply in Hinglish using Devanagari for Hindi words
-   - CRITICAL: Gujarati (ગુજરાતી) and Hindi (हिन्दी) are DIFFERENT languages with DIFFERENT scripts. Do NOT confuse them. Gujarati uses characters like આ, ઈ, ઉ, એ, ઓ, ક, ખ, ગ. Hindi uses characters like आ, ई, उ, ए, ओ, क, ख, ग.
-   - NEVER use Latin/Roman transliteration for Indian languages. Always use the native script.
+1. LANGUAGE & SCRIPT: Detect the language of the parent's CURRENT message (ignore all older messages) and respond using the NATIVE SCRIPT of that language. This applies even if the parent types in Latin/Roman script.
+   - Hindi (e.g., "kaise hai", "namaste", "homework pending hai kya", or Devanagari text) → ALWAYS reply in Devanagari script (हिंदी)
+   - Gujarati (e.g., "kem cho", "homework kevu che", "maru bachchu", or Gujarati script text) → ALWAYS reply in Gujarati script (ગુજરાતી)
+   - English → reply in English
+   - CRITICAL: If the parent writes in an Indian language using Latin/Roman letters (transliteration), you MUST still reply in the NATIVE SCRIPT of that language, NOT in Latin letters. For example: "homework pending hai kya" → reply in देवनागरी. "maru bachchu nu result batavo" → reply in ગુજરાતી.
+   - Gujarati (ગુજરાતી) and Hindi (हिन्दी) are DIFFERENT languages with DIFFERENT scripts. Gujarati uses: આ, ઈ, ઉ, એ, ઓ, ક, ખ, ગ. Hindi uses: आ, ई, उ, ए, ओ, क, ख, ग.
+   - NEVER reply in Latin/Roman transliteration for any Indian language.
 2. Always refer to the child as *{student_name}* (with WhatsApp bold).
 3. Keep responses SHORT for WhatsApp — 2-4 sentences. No essays.
 4. Use WhatsApp *bold* for key data points.
