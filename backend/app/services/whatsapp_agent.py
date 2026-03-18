@@ -408,24 +408,72 @@ def _detect_language(text: str) -> str:
         return "hindi"
 
     # For Latin-typed text, use keyword heuristics
-    lower = text.lower()
+    lower = " " + text.lower().strip() + " "
+    # Normalize common punctuation
+    for ch in "?,!.;:":
+        lower = lower.replace(ch, " ")
+    lower = " " + " ".join(lower.split()) + " "
+
     gujarati_markers = [
-        "che", "chhe", "kevu", "kevu", "kem", "maru", "taru", "tamaru",
-        "aenu", "ena", "eni", "chhu", "karvu", "batavo", "karo", "aavjo",
-        "shu", "ane", "pan", "nathi", "hatu", "hoy", "ketlu", "kevi",
-        "bachchu", "dikri", "dikro", "bhanu", "padhai", "shikshan",
-        "chokhkhu", "saras", "maja", "avi", "gayo", "gai", "karyu",
+        # Common verbs & auxiliaries
+        "che", "chhe", "chhu", "chho", "hatu", "hati", "hoy", "hata",
+        "karvu", "karje", "karo", "kari", "karse", "karyo", "karyu",
+        "batavo", "batav", "janavo", "janav", "kahejo", "kahe",
+        "aavjo", "aavo", "aav", "jao", "jajo",
+        # Pronouns & possessives
+        "maru", "mari", "mara", "taru", "tari", "tara", "tamaru", "tamari",
+        "aenu", "aeni", "aena", "ena", "eni", "eno",
+        # Question words
+        "shu", "kem", "kyare", "kyan", "ketlu", "ketli", "ketla", "kevi", "kevu", "kevo",
+        # Common words
+        "ane", "pan", "nathi", "nahi", "haa", "na", "to", "thi", "ma", "par",
+        "saras", "saru", "kharu", "maja", "bahu", "badhu", "badha",
+        # Family & school terms
+        "bachchu", "bachcha", "chhokro", "chhokri", "dikri", "dikro", "dikra",
+        "bhai", "bahen", "mummy", "papa", "shikshan", "shala", "school",
+        "padhai", "abhyas", "pariksha", "result", "marks",
+        # Greetings
+        "kem cho", "majama", "aavjo",
+        # Common phrases (multi-word)
+        "su che", "kevu che", "kevi che", "kevo che",
+        "batavo ne", "kaho ne", "janavo ne",
+        "homework kevu", "result batavo", "marks batavo",
+        "test kevu", "ketle marks", "rank shu",
     ]
     hindi_markers = [
-        "hai", "kya", "kaise", "kaisa", "mera", "meri", "mere",
-        "bataiye", "batao", "karo", "karna", "raha", "rahi",
-        "bacche", "bachche", "padhai", "homework", "result",
-        "kaisa", "kaisi", "kab", "kahan", "kyun", "acha",
-        "haan", "nahi", "aur", "bhi", "toh", "iska",
+        # Common verbs & auxiliaries
+        "hai", "hain", "tha", "thi", "the", "hoga", "hogi",
+        "karo", "karna", "karke", "kiya", "kiye", "karunga",
+        "batao", "bataiye", "bataen", "batana", "dikhao",
+        "raha", "rahi", "rahe",
+        # Pronouns & possessives
+        "mera", "meri", "mere", "tera", "teri", "tere",
+        "uska", "uski", "unka", "unki", "iska", "iski",
+        "apna", "apni", "apne", "hamara", "hamari",
+        # Question words
+        "kya", "kaise", "kaisa", "kaisi", "kab", "kahan", "kyun", "kitna", "kitni", "kitne",
+        # Common words
+        "aur", "bhi", "toh", "lekin", "ya", "se", "ko", "ka", "ki", "ke",
+        "acha", "acchi", "thik", "bahut", "bohot",
+        "haan", "nahi", "nahin", "mat",
+        # Family & school terms
+        "bacche", "bachche", "bachcha", "beta", "beti", "bete",
+        "padhai", "pariksha", "result", "marks", "homework",
+        # Common phrases
+        "kaise hai", "kaisa hai", "kaisi hai",
+        "bata do", "bata dijiye", "batao na",
+        "pending hai", "kitna hai", "kya hai",
     ]
 
-    guj_count = sum(1 for w in gujarati_markers if w in lower.split() or f" {w} " in f" {lower} ")
-    hin_count = sum(1 for w in hindi_markers if w in lower.split() or f" {w} " in f" {lower} ")
+    # Count matches (check as whole words)
+    guj_count = 0
+    hin_count = 0
+    for marker in gujarati_markers:
+        if f" {marker} " in lower:
+            guj_count += 1
+    for marker in hindi_markers:
+        if f" {marker} " in lower:
+            hin_count += 1
 
     if guj_count > hin_count and guj_count >= 1:
         return "gujarati"
