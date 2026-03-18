@@ -17,7 +17,9 @@ from app.models.database import (
     get_db, User, Subject, Chapter, Test, TestQuestion,
     StudentProfile, StudentPerformance, StudentExamScore,
     StudentPracticeProgress, StudentHomeworkStatus, AsyncSessionLocal,
-    PreviousYearPaper, AICache, Content
+    PreviousYearPaper, AICache, Content,
+    StructuredTest, StructuredTestSubmission,
+    StructuredHomework, StructuredHomeworkSubmission
 )
 from app.deps import (
     get_current_user, get_optional_user, require_teacher, require_admin,
@@ -517,8 +519,7 @@ async def list_subjects(
             "syllabus_complete_percent": 0
         }
         
-        # Calculate syllabus completion for students based on quiz completion
-        # Each chapter has 5 quizzes, completing all 5 = 100% for that chapter
+        # Calculate syllabus completion for students based on quiz, test, and homework completion
         if user and user.role == 'student':
             # Get total chapters for this subject
             chapters_result = await db.execute(
@@ -534,7 +535,7 @@ async def list_subjects(
                 student_profile = student_profile_result.scalars().first()
                 
                 if student_profile:
-                    # Count total quizzes completed (each quiz = 1 entry with attempted=True)
+                    # 1. Practice quizzes completed (5 per chapter)
                     quizzes_completed_result = await db.execute(
                         select(func.count(StudentPracticeProgress.id)).where(
                             and_(
@@ -545,12 +546,82 @@ async def list_subjects(
                         )
                     )
                     quizzes_completed = quizzes_completed_result.scalar() or 0
-                    
-                    # Total possible quizzes = chapters * 5
                     total_quizzes = total_chapters * 5
+                    quiz_pct = (quizzes_completed / total_quizzes * 100) if total_quizzes > 0 else 0
                     
-                    # Calculate percentage (each quiz = 20% of a chapter, spread across all chapters)
-                    subject_data["syllabus_complete_percent"] = round((quizzes_completed / total_quizzes) * 100) if total_quizzes > 0 else 0
+                    # 2. Structured tests completed
+                    total_tests_result = await db.execute(
+                        select(func.count(StructuredTest.id)).where(
+                            StructuredTest.subject_id == s.id,
+                            StructuredTest.standard == s.standard,
+                        )
+                    )
+                    total_tests = total_tests_result.scalar() or 0
+                    
+                    completed_tests_result = await db.execute(
+                        select(func.count(StructuredTestSubmission.id)).where(
+                            StructuredTestSubmission.student_id == user.id,
+                            StructuredTestSubmission.submitted == True,
+                            StructuredTestSubmission.test_id.in_(
+                                select(StructuredTest.id).where(
+                                    StructuredTest.subject_id == s.id,
+                                    StructuredTest.standard == s.standard,
+                                )
+                            )
+                        )
+                    )
+                    completed_tests = completed_tests_result.scalar() or 0
+                    test_pct = (completed_tests / total_tests * 100) if total_tests > 0 else 0
+                    
+                    # 3. Structured homework completed
+                    total_hw_result = await db.execute(
+                        select(func.count(StructuredHomework.id)).where(
+                            StructuredHomework.subject_id == s.id,
+                            StructuredHomework.standard == s.standard,
+                        )
+                    )
+                    total_hw = total_hw_result.scalar() or 0
+                    
+                    completed_hw_result = await db.execute(
+                        select(func.count(StructuredHomeworkSubmission.id)).where(
+                            StructuredHomeworkSubmission.student_id == user.id,
+                            StructuredHomeworkSubmission.completed == True,
+                            StructuredHomeworkSubmission.homework_id.in_(
+                                select(StructuredHomework.id).where(
+                                    StructuredHomework.subject_id == s.id,
+                                    StructuredHomework.standard == s.standard,
+                                )
+                            )
+                        )
+                    )
+                    completed_hw = completed_hw_result.scalar() or 0
+                    hw_pct = (completed_hw / total_hw * 100) if total_hw > 0 else 0
+                    
+                    # Combined weighted average: quizzes 40%, tests 35%, homework 25%
+                    has_quizzes = total_quizzes > 0
+                    has_tests = total_tests > 0
+                    has_hw = total_hw > 0
+                    
+                    # Dynamically weight based on what content exists
+                    weights = []
+                    pcts = []
+                    if has_quizzes:
+                        weights.append(0.4)
+                        pcts.append(quiz_pct)
+                    if has_tests:
+                        weights.append(0.35)
+                        pcts.append(test_pct)
+                    if has_hw:
+                        weights.append(0.25)
+                        pcts.append(hw_pct)
+                    
+                    if weights:
+                        total_weight = sum(weights)
+                        subject_data["syllabus_complete_percent"] = round(
+                            sum(w * p for w, p in zip(weights, pcts)) / total_weight
+                        )
+                    else:
+                        subject_data["syllabus_complete_percent"] = 0
         
         subjects_data.append(subject_data)
     
