@@ -26,6 +26,30 @@ router = APIRouter()
 
 # Auth Routes
 
+# Adaptive cookie settings: secure=True only for HTTPS deployments
+import os
+_COOKIE_SECURE = os.getenv("COOKIE_SECURE", "auto")
+def _get_cookie_params():
+    """Return cookie params adapted for HTTP or HTTPS."""
+    if _COOKIE_SECURE == "false":
+        return {"samesite": "Lax", "secure": False}
+    # Default: secure for production (HTTPS)
+    return {"samesite": "None", "secure": True}
+
+def _set_auth_cookie(response: Response, token: str):
+    params = _get_cookie_params()
+    response.set_cookie(
+        key="auth_token", value=token, httponly=True, max_age=86400,
+        samesite=params["samesite"], secure=params["secure"]
+    )
+
+def _delete_auth_cookie(response: Response):
+    params = _get_cookie_params()
+    response.delete_cookie(
+        "auth_token", path="/", httponly=True,
+        samesite=params["samesite"], secure=params["secure"]
+    )
+
 class PasswordLoginRequest(BaseModel):
     phone: str
     password: str
@@ -57,14 +81,7 @@ async def login_with_password(request: PasswordLoginRequest, response: Response,
     # Create JWT token
     token = create_jwt_token(str(user.id), user.role)
     
-    response.set_cookie(
-        key="auth_token",
-        value=token,
-        httponly=True,
-        max_age=86400,
-        samesite="None",
-        secure=True
-    )
+    _set_auth_cookie(response, token)
     
     # Get student profile if student
     profile_completed = user.profile_completed if hasattr(user, 'profile_completed') else False
@@ -129,13 +146,7 @@ async def get_me(user: User = Depends(get_current_user), db: AsyncSession = Depe
 
 @router.post("/auth/logout")
 async def logout(response: Response):
-    response.delete_cookie(
-        "auth_token",
-        path="/",
-        httponly=True,
-        samesite="None",
-        secure=True
-    )
+    _delete_auth_cookie(response)
     return {"message": "Logged out successfully"}
 
 # =============================================================================
@@ -177,14 +188,7 @@ async def admin_login(request: AdminLoginRequest, response: Response, db: AsyncS
     # Create JWT token
     token = create_jwt_token(str(admin_user.id), 'admin')
     
-    response.set_cookie(
-        key="auth_token",
-        value=token,
-        httponly=True,
-        max_age=86400,
-        samesite="None",
-        secure=True
-    )
+    _set_auth_cookie(response, token)
     
     return {
         "message": "Admin login successful",
@@ -689,14 +693,7 @@ async def admin_impersonate_user(
     # Create JWT token for the target user
     token = create_jwt_token(str(target_user.id), target_user.role)
     
-    response.set_cookie(
-        key="auth_token",
-        value=token,
-        httponly=True,
-        max_age=86400,
-        samesite="None",
-        secure=True
-    )
+    _set_auth_cookie(response, token)
     
     logger.info(f"👤 Admin impersonating user: {profile.name} (Roll: {request.roll_no})")
     
@@ -863,7 +860,7 @@ async def login_with_rollno(
             await db.commit()
             await db.refresh(admin_user)
         token = create_jwt_token(str(admin_user.id), 'admin')
-        response.set_cookie(key="auth_token", value=token, httponly=True, max_age=86400, samesite="None", secure=True)
+        _set_auth_cookie(response, token)
         logger.info(f"✅ Admin logged in via main login form")
         return {
             "message": "Login successful",
@@ -897,14 +894,7 @@ async def login_with_rollno(
     # Create JWT token
     token = create_jwt_token(str(user.id), user.role)
     
-    response.set_cookie(
-        key="auth_token",
-        value=token,
-        httponly=True,
-        max_age=86400,
-        samesite="None",
-        secure=True
-    )
+    _set_auth_cookie(response, token)
     
     logger.info(f"✅ User logged in: {profile.name} (Roll: {request.roll_no})")
     
