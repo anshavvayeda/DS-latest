@@ -865,6 +865,19 @@ const EditUserProfile = ({ onCancel }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [availableSchools, setAvailableSchools] = useState([]);
+
+  useEffect(() => {
+    const fetchSchools = async () => {
+      try {
+        const res = await axios.get(`${API}/schools/list`, { withCredentials: true });
+        setAvailableSchools(res.data.schools || []);
+      } catch (err) {
+        console.error('Failed to fetch schools:', err);
+      }
+    };
+    fetchSchools();
+  }, []);
 
   const searchUser = async () => {
     if (!searchRollNo.trim()) return;
@@ -976,7 +989,13 @@ const EditUserProfile = ({ onCancel }) => {
           <div className="form-row">
             <div className="form-group">
               <label>School Name</label>
-              <input type="text" name="school_name" value={editData.school_name} onChange={handleChange} className="form-input" data-testid="edit-user-school" />
+              <select name="school_name" value={editData.school_name} onChange={handleChange} className="form-input" data-testid="edit-user-school">
+                <option value="">Select School</option>
+                {availableSchools.map(s => <option key={s} value={s}>{s}</option>)}
+                {editData.school_name && !availableSchools.includes(editData.school_name) && (
+                  <option value={editData.school_name}>{editData.school_name}</option>
+                )}
+              </select>
             </div>
             <div className="form-group">
               <label>Gender</label>
