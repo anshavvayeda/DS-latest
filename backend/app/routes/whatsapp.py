@@ -397,46 +397,49 @@ async def _generate_response(
     """Generate contextual response using GPT-4o via OpenRouter"""
     data = brief.brief_data or {}
     dashboard_url = f"{_get_dashboard_base_url()}/api/whatsapp/parent-view/{brief.dashboard_token}"
+    student_name = data.get('student_name', 'your child')
+    is_first_message = len(history) <= 1  # Only the current user message
 
     # Build system prompt with student data context
-    system_prompt = f"""You are StudyBuddy Parent Assistant, a helpful WhatsApp chatbot for parents to check their child's academic performance.
+    system_prompt = f"""You are StudyBuddy Parent Assistant, a WhatsApp chatbot that helps parents track their child's academic performance.
 
-STUDENT INFORMATION:
-- Name: {data.get('student_name', 'N/A')}
+CRITICAL RULES:
+1. ALWAYS respond in the SAME LANGUAGE as the parent's last message. If they write in Hindi, respond in Hindi. If in Gujarati, respond in Gujarati. If in English, respond in English.
+2. ALWAYS refer to the child by their name: *{student_name}*
+3. Keep responses SHORT and WhatsApp-friendly (2-4 short paragraphs max)
+4. Use *bold* for emphasis (WhatsApp formatting)
+5. NEVER make up data. Only use the information provided below. If something is not available, say so politely.
+
+STUDENT DATA:
+- Name: {student_name}
 - Roll No: {data.get('roll_no', 'N/A')}
 - Class: {data.get('standard', 'N/A')}
 - Overall Average: {data.get('overall_average', 'N/A')}%
-- Class Rank: {data.get('class_rank', 'N/A')} out of {data.get('total_students_ranked', 'N/A')} students
+- Class Rank: {data.get('class_rank', 'N/A')} out of {data.get('total_students_ranked', 'N/A')}
 - Homework Completion: {data.get('homework_completion', {}).get('completed', 0)}/{data.get('homework_completion', {}).get('total', 0)} ({data.get('homework_completion', {}).get('rate', 0)}%)
+- Strong Subjects: {', '.join(data.get('strong_subjects', [])) or 'None identified yet'}
+- Weak Subjects: {', '.join(data.get('weak_subjects', [])) or 'None identified yet'}
 
-STRONG SUBJECTS: {', '.join(data.get('strong_subjects', [])) or 'None yet'}
-WEAK SUBJECTS: {', '.join(data.get('weak_subjects', [])) or 'None yet'}
-
-SUBJECT-WISE ANALYSIS:
+SUBJECT ANALYSIS:
 {json.dumps(data.get('subject_analysis', {}), indent=2)}
 
-RECENT TEST SCORES:
+RECENT TESTS (latest first):
 {json.dumps(data.get('test_scores', [])[:10], indent=2)}
 
-MISSED HOMEWORK:
+PENDING/MISSED HOMEWORK:
 {json.dumps(data.get('missed_homework', []), indent=2)}
 
-PARENT DASHBOARD LINK: {dashboard_url}
+DASHBOARD LINK: {dashboard_url}
 
-INSTRUCTIONS:
-- Respond in a warm, supportive tone suitable for parents
-- Keep responses concise (max 3-4 short paragraphs for WhatsApp readability)
-- When asked about performance, give a brief overall summary then specifics
-- Include the dashboard link when sharing the first summary or when the parent asks for more details
-- For improvement notes, give 2-3 actionable sentences (not per-test, but overall)
-- Use plain text formatting suitable for WhatsApp (no markdown, use *bold* for emphasis)
-- If the parent asks about something not in the data, politely say you only have academic data available
-- When greeting or first message, always include a brief performance summary and the dashboard link"""
+BEHAVIOR:
+- {"This is the FIRST message from the parent. Greet them warmly, introduce yourself as StudyBuddy Assistant, and ask if they would like to see " + student_name + "'s performance overview. Keep it brief and welcoming. Include the dashboard link." if is_first_message else "This is a follow-up message. Answer the parent's specific question using ONLY the data above. If they ask for the performance overview, provide a brief summary with key highlights. If they ask about something not in the data (like attendance, behavior, etc.), politely inform them that you currently only have academic performance data (test scores, homework status, and subject analysis)."}
+- For improvement suggestions, give 2-3 brief actionable tips (overall, not per-test)
+- Do NOT repeat the full performance report unless explicitly asked"""
 
     # Build messages array with history
     messages = [{"role": "system", "content": system_prompt}]
 
-    # Add chat history (excluding the current message which is already the last in history)
+    # Add chat history (excluding the current message which is already the last)
     for h in history[:-1] if history else []:
         messages.append({"role": h["role"], "content": h["content"]})
 
@@ -453,21 +456,36 @@ INSTRUCTIONS:
                 json={
                     "model": "openai/gpt-4o",
                     "messages": messages,
-                    "max_tokens": 500,
+                    "max_tokens": 600,
                     "temperature": 0.7,
                 },
             )
             resp_data = response.json()
-            return resp_data["choices"][0]["message"]["content"]
+
+            # Handle various response formats
+            if "choices" in resp_data and resp_data["choices"]:
+                return resp_data["choices"][0]["message"]["content"]
+
+            # Log unexpected response for debugging
+            error_msg = resp_data.get("error", {}).get("message", str(resp_data))
+            logger.error(f"OpenRouter unexpected response: {error_msg}")
+            return _generate_fallback_response(data, dashboard_url, student_name, is_first_message)
+
     except Exception as e:
-        logger.error(f"GPT-4o generation error: {e}")
-        # Fallback: return a basic summary
-        return _generate_fallback_summary(data, dashboard_url)
+        logger.error(f"GPT-4o generation error: {e}", exc_info=True)
+        return _generate_fallback_response(data, dashboard_url, student_name, is_first_message)
 
 
-def _generate_fallback_summary(data: dict, dashboard_url: str) -> str:
-    """Generate a basic summary without LLM as fallback"""
-    name = data.get("student_name", "your child")
+def _generate_fallback_response(data: dict, dashboard_url: str, name: str, is_first: bool) -> str:
+    """Fallback response when LLM is unavailable"""
+    if is_first:
+        return (
+            f"Hello! Welcome to StudyBuddy.\n\n"
+            f"I'm here to help you track *{name}*'s academic progress. "
+            f"Would you like to see their performance overview?\n\n"
+            f"You can also view the full dashboard here:\n{dashboard_url}"
+        )
+
     avg = data.get("overall_average", 0)
     rank = data.get("class_rank")
     total = data.get("total_students_ranked", 0)
@@ -475,17 +493,17 @@ def _generate_fallback_summary(data: dict, dashboard_url: str) -> str:
     weak = ", ".join(data.get("weak_subjects", []))
     missed = len(data.get("missed_homework", []))
 
-    lines = [f"Hello! Here's a quick update on *{name}*'s performance:\n"]
+    lines = [f"Here's *{name}*'s performance summary:\n"]
     lines.append(f"Overall Average: *{avg}%*")
     if rank:
-        lines.append(f"Class Rank: *{rank}* out of {total} students")
+        lines.append(f"Class Rank: *#{rank}* out of {total}")
     if strong:
         lines.append(f"Strong in: *{strong}*")
     if weak:
-        lines.append(f"Needs improvement: *{weak}*")
+        lines.append(f"Needs work: *{weak}*")
     if missed:
-        lines.append(f"Pending homework: *{missed}* assignments")
-    lines.append(f"\nView full dashboard: {dashboard_url}")
+        lines.append(f"Pending homework: *{missed}*")
+    lines.append(f"\nFull dashboard: {dashboard_url}")
     return "\n".join(lines)
 
 
