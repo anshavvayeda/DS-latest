@@ -225,11 +225,13 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - Testing: 18/18 backend tests passed (100%)
 
 ### WhatsApp Agentic Architecture (Complete - Mar 18, 2026)
-- Refactored from single-prompt to agentic architecture with GPT-4o tool calling
+- Refactored from single-prompt to agentic architecture with Sarvam AI (sarvam-30b) tool calling
+- Switched from OpenRouter GPT-4o to Sarvam AI for native Indic language support
+- Native script responses: Hindi in Devanagari (हिंदी), Gujarati in Gujarati script (ગુજરાતી), English in Latin
 - `whatsapp_agent.py`: Router → Planner → Tools pattern with 7 tools (overview, subject perf, recent tests, pending homework, class rank, improvement tips, dashboard link)
 - Conversation behavior: First message = warm greeting without data dump, Specific question = precise tool-based answer
-- Language detection: Responds in same language as parent's message (Hindi, Gujarati, English, Hinglish)
 - Graceful handling of unavailable data (fees, attendance) with school contact suggestion
+- Old `_generate_response` function removed; `run_agent` is now the sole response generator
 - Test endpoint: POST /api/whatsapp/test-message for development testing
 - Testing: 18/18 backend tests passed (100%)
 

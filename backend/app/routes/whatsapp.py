@@ -25,7 +25,6 @@ router = APIRouter(prefix="/whatsapp", tags=["whatsapp"])
 WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
 WHATSAPP_ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN")
 WHATSAPP_VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 WHATSAPP_BASE_URL = os.getenv("WHATSAPP_BASE_URL", "")
 
 CHAT_MEMORY_LIMIT = 20
@@ -391,98 +390,6 @@ async def _get_chat_history(db: AsyncSession, phone: str) -> list:
     messages = result.scalars().all()
     return [{"role": m.role, "content": m.message} for m in messages]
 
-
-# =============================================================================
-# GPT-4o RESPONSE GENERATION (via OpenRouter)
-# =============================================================================
-async def _generate_response(
-    user_message: str,
-    brief: WhatsappParentBrief,
-    history: list,
-    profile: StudentProfile,
-    is_first_message: bool,
-) -> str:
-    """Generate contextual response using GPT-4o via OpenRouter"""
-    data = brief.brief_data or {}
-    dashboard_url = f"{_get_dashboard_base_url()}/api/whatsapp/parent-view/{brief.dashboard_token}"
-    student_name = data.get('student_name', 'your child')
-
-    system_prompt = f"""You are StudyBuddy Parent Assistant on WhatsApp.
-
-ABSOLUTE RULES — NEVER BREAK THESE:
-1. DETECT the language of the parent's LAST message and reply ONLY in that language. Hindi message → Hindi reply. English → English. Gujarati → Gujarati. Hinglish → Hinglish.
-2. Always call the child by name: {student_name}
-3. DO NOT volunteer information the parent did not ask for. Be conversational, not a report generator.
-4. Keep replies SHORT — 2-3 sentences max unless they ask for a detailed report.
-5. Use WhatsApp *bold* formatting for key numbers/names.
-
-CONVERSATION FLOW:
-- FIRST MESSAGE: Greet the parent warmly. Say you are StudyBuddy Assistant. Tell them you can help with {student_name}'s academic updates. Ask what they'd like to know — for example: performance overview, test scores, homework status, or they can view the dashboard. Share dashboard link: {dashboard_url}
-- SUBSEQUENT MESSAGES: ONLY answer what the parent specifically asks. Examples:
-  * "How did my child do?" → Give brief overall average and rank only
-  * "Maths mein kaisa hai?" → Give only maths data
-  * "Homework pending hai?" → Give only pending homework info
-  * "Dashboard link bhejo" → Send only the link
-  * "Tell me everything" → Then give a full summary
-  * If they ask about something NOT in the data (attendance, behavior, fees) → Say politely: "I currently only have academic data like test scores and homework. For [what they asked], please contact the school."
-
-AVAILABLE DATA (use ONLY when asked):
-- Overall Average: {data.get('overall_average', 'N/A')}%
-- Class Rank: {data.get('class_rank', 'N/A')} out of {data.get('total_students_ranked', 'N/A')}
-- Homework: {data.get('homework_completion', {}).get('completed', 0)} done out of {data.get('homework_completion', {}).get('total', 0)}
-- Strong Subjects: {', '.join(data.get('strong_subjects', [])) or 'None yet'}
-- Weak Subjects: {', '.join(data.get('weak_subjects', [])) or 'None yet'}
-- Subject Analysis: {json.dumps(data.get('subject_analysis', {}), indent=2)}
-- Recent Tests: {json.dumps(data.get('test_scores', [])[:8], indent=2)}
-- Missed Homework: {json.dumps(data.get('missed_homework', []), indent=2)}
-- Dashboard: {dashboard_url}"""
-
-    messages = [{"role": "system", "content": system_prompt}]
-
-    # Add full chat history
-    for h in history[:-1] if history else []:
-        messages.append({"role": h["role"], "content": h["content"]})
-
-    messages.append({"role": "user", "content": user_message})
-
-    try:
-        async with httpx.AsyncClient(timeout=30) as client:
-            response = await client.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": "openai/gpt-4o",
-                    "messages": messages,
-                    "max_tokens": 500,
-                    "temperature": 0.7,
-                },
-            )
-            resp_data = response.json()
-
-            if "choices" in resp_data and resp_data["choices"]:
-                return resp_data["choices"][0]["message"]["content"]
-
-            error_msg = resp_data.get("error", {}).get("message", str(resp_data)[:200])
-            logger.error(f"OpenRouter response error: {error_msg}")
-
-    except Exception as e:
-        logger.error(f"GPT-4o call failed: {e}", exc_info=True)
-
-    # Fallback — conversational, not a data dump
-    if is_first_message:
-        return (
-            f"Hello! I'm StudyBuddy Assistant.\n\n"
-            f"I can help you with *{student_name}*'s academic updates — "
-            f"test scores, homework status, and more.\n\n"
-            f"What would you like to know? Or view the full dashboard:\n{dashboard_url}"
-        )
-    return (
-        f"I'm sorry, I'm having a temporary issue generating a response. "
-        f"In the meantime, you can view *{student_name}*'s full performance here:\n{dashboard_url}"
-    )
 
 
 # =============================================================================

@@ -14,7 +14,7 @@ from app.models.database import (
 
 logger = logging.getLogger(__name__)
 
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+SARVAM_API_KEY = os.getenv("SARVAM_API_KEY")
 MAX_AGENT_LOOPS = 3
 
 # =============================================================================
@@ -406,7 +406,7 @@ async def run_agent(
     brief: WhatsappParentBrief,
     base_url: str,
 ) -> str:
-    """Run the agentic loop: GPT-4o decides tools → execute → respond"""
+    """Run the agentic loop: Sarvam AI decides tools → execute → respond"""
     student_name = profile.name or "your child"
 
     system_prompt = f"""You are StudyBuddy Parent Assistant, a WhatsApp chatbot agent that helps parents track their child's academic performance.
@@ -416,14 +416,24 @@ IDENTITY:
 - The student's name is *{student_name}* (Class {profile.standard}).
 
 ABSOLUTE RULES:
-1. LANGUAGE: Detect the language of the parent's CURRENT message and respond ONLY in that language. Hindi → Hindi. Gujarati → Gujarati. English → English. Hinglish → Hinglish. Do NOT use the language of old messages.
+1. LANGUAGE & SCRIPT: Detect the language of the parent's CURRENT message and respond ONLY in that language using its NATIVE SCRIPT.
+   - If message contains Devanagari (हिन्दी) → reply in Hindi using Devanagari script
+   - If message contains Gujarati script (ગુજરાતી) → reply in Gujarati using Gujarati script (ગુજરાતી લિપિ)
+   - If message is in English → reply in English
+   - If message mixes Hindi/English (Hinglish) → reply in Hinglish using Devanagari for Hindi words
+   - CRITICAL: Gujarati (ગુજરાતી) and Hindi (हिन्दी) are DIFFERENT languages with DIFFERENT scripts. Do NOT confuse them. Gujarati uses characters like આ, ઈ, ઉ, એ, ઓ, ક, ખ, ગ. Hindi uses characters like आ, ई, उ, ए, ओ, क, ख, ग.
+   - NEVER use Latin/Roman transliteration for Indian languages. Always use the native script.
 2. Always refer to the child as *{student_name}* (with WhatsApp bold).
 3. Keep responses SHORT for WhatsApp — 2-4 sentences. No essays.
 4. Use WhatsApp *bold* for key data points.
 5. NEVER fabricate data. Only share what comes from tool results.
 
 CONVERSATION BEHAVIOR:
-- FIRST MESSAGE (generic greeting like Hi/Hello): Greet warmly, introduce yourself, and ask what they'd like to know about *{student_name}*. Mention you can help with: test scores, homework status, subject performance, class rank, or share the dashboard link. Do NOT call any tools yet. Do NOT dump data.
+- FIRST MESSAGE (generic greeting like Hi/Hello/नमस्ते/કેમ છો): Greet warmly IN THE SAME LANGUAGE AND SCRIPT as the parent's message, introduce yourself, and ask what they'd like to know about *{student_name}*. Mention you can help with: test scores, homework status, subject performance, class rank, or share the dashboard link. Do NOT call any tools yet. Do NOT dump data.
+  Examples:
+  - Parent says "Hi" → respond in English
+  - Parent says "नमस्ते" → respond fully in Hindi Devanagari (e.g., "नमस्ते! मैं StudyBuddy Assistant हूँ...")
+  - Parent says "કેમ છો" → respond fully in Gujarati script (e.g., "નમસ્તે! હું StudyBuddy Assistant છું...")
 - SPECIFIC QUESTION: Call the appropriate tool(s), get the data, then answer precisely. After answering, ask if they'd like the dashboard link or have more questions.
 - MULTIPLE TOPICS in one message: Call multiple tools as needed.
 - UNAVAILABLE DATA: If a tool returns an error or the parent asks about something you don't have tools for (fees, attendance, behavior), say politely that this information is not available and suggest contacting the school.
@@ -439,12 +449,12 @@ TONE: Friendly, warm, professional. Like a helpful school coordinator. Not robot
 
     messages.append({"role": "user", "content": user_message})
 
-    # Agent loop — GPT-4o can call tools and then we feed results back
+    # Agent loop — Sarvam AI can call tools and then we feed results back
     for loop_i in range(MAX_AGENT_LOOPS):
         try:
             async with httpx.AsyncClient(timeout=30) as client:
                 payload = {
-                    "model": "openai/gpt-4o",
+                    "model": "sarvam-30b",
                     "messages": messages,
                     "max_tokens": 500,
                     "temperature": 0.7,
@@ -455,9 +465,9 @@ TONE: Friendly, warm, professional. Like a helpful school coordinator. Not robot
                     payload["tool_choice"] = "auto"
 
                 resp = await client.post(
-                    "https://openrouter.ai/api/v1/chat/completions",
+                    "https://api.sarvam.ai/v1/chat/completions",
                     headers={
-                        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                        "API-Subscription-Key": SARVAM_API_KEY,
                         "Content-Type": "application/json",
                     },
                     json=payload,
@@ -466,7 +476,7 @@ TONE: Friendly, warm, professional. Like a helpful school coordinator. Not robot
 
             if "choices" not in resp_data or not resp_data["choices"]:
                 error_msg = resp_data.get("error", {}).get("message", str(resp_data)[:200])
-                logger.error(f"Agent OpenRouter error: {error_msg}")
+                logger.error(f"Agent Sarvam AI error: {error_msg}")
                 break
 
             choice = resp_data["choices"][0]

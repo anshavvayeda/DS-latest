@@ -49,7 +49,7 @@ echo ""
 echo -e "${BLUE}Current Configuration:${NC}"
 CURRENT_TOKEN=$(grep "^WHATSAPP_ACCESS_TOKEN=" "$ENV_FILE" | cut -d'=' -f2-)
 CURRENT_NGROK=$(grep "^WHATSAPP_BASE_URL=" "$ENV_FILE" | cut -d'=' -f2-)
-CURRENT_OPENROUTER=$(grep "^OPENROUTER_API_KEY=" "$ENV_FILE" | cut -d'=' -f2-)
+CURRENT_OPENROUTER=$(grep "^SARVAM_API_KEY=" "$ENV_FILE" | cut -d'=' -f2-)
 
 if [ -n "$CURRENT_TOKEN" ]; then
     echo -e "  WhatsApp Token: ${YELLOW}${CURRENT_TOKEN:0:15}...${NC}"
@@ -64,9 +64,9 @@ else
 fi
 
 if [ -n "$CURRENT_OPENROUTER" ]; then
-    echo -e "  OpenRouter Key: ${YELLOW}${CURRENT_OPENROUTER:0:15}...${NC}"
+    echo -e "  Sarvam Key:     ${YELLOW}${CURRENT_OPENROUTER:0:15}...${NC}"
 else
-    echo -e "  OpenRouter Key: ${RED}Not set${NC}"
+    echo -e "  Sarvam Key:     ${RED}Not set${NC}"
 fi
 echo ""
 
@@ -74,7 +74,7 @@ echo ""
 echo -e "${BLUE}What would you like to update?${NC}"
 echo "  1) WhatsApp Access Token"
 echo "  2) ngrok/Public URL (Base URL)"
-echo "  3) OpenRouter API Key"
+echo "  3) Sarvam AI API Key"
 echo "  4) All of the above"
 echo "  5) Clear WhatsApp chat history (for fresh testing)"
 echo "  6) Exit"
@@ -153,13 +153,13 @@ case $CHOICE in
         ;;
     3)
         echo ""
-        read -p "Paste new OpenRouter API Key: " NEW_KEY
+        read -p "Paste new Sarvam AI API Key: " NEW_KEY
         if [ -z "$NEW_KEY" ]; then
             echo -e "${RED}No key provided. Exiting.${NC}"
             exit 1
         fi
-        update_env_var "OPENROUTER_API_KEY" "$NEW_KEY" "$ENV_FILE"
-        echo -e "${GREEN}OpenRouter key updated${NC}"
+        update_env_var "SARVAM_API_KEY" "$NEW_KEY" "$ENV_FILE"
+        echo -e "${GREEN}Sarvam AI key updated${NC}"
         restart_service
         ;;
     4)
@@ -188,10 +188,10 @@ case $CHOICE in
         fi
 
         echo ""
-        echo -e "${YELLOW}=== Step 3/3: OpenRouter API Key ===${NC}"
+        echo -e "${YELLOW}=== Step 3/3: Sarvam AI API Key ===${NC}"
         read -p "  Paste key (or press Enter to skip): " NEW_KEY
         if [ -n "$NEW_KEY" ]; then
-            update_env_var "OPENROUTER_API_KEY" "$NEW_KEY" "$ENV_FILE"
+            update_env_var "SARVAM_API_KEY" "$NEW_KEY" "$ENV_FILE"
             echo -e "  ${GREEN}Key updated${NC}"
         else
             echo -e "  ${YELLOW}Skipped${NC}"
