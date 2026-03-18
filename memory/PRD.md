@@ -224,6 +224,22 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 - Fallback summary if LLM fails
 - Testing: 18/18 backend tests passed (100%)
 
+### WhatsApp Agentic Architecture (Complete - Mar 18, 2026)
+- Refactored from single-prompt to agentic architecture with GPT-4o tool calling
+- `whatsapp_agent.py`: Router → Planner → Tools pattern with 7 tools (overview, subject perf, recent tests, pending homework, class rank, improvement tips, dashboard link)
+- Conversation behavior: First message = warm greeting without data dump, Specific question = precise tool-based answer
+- Language detection: Responds in same language as parent's message (Hindi, Gujarati, English, Hinglish)
+- Graceful handling of unavailable data (fees, attendance) with school contact suggestion
+- Test endpoint: POST /api/whatsapp/test-message for development testing
+- Testing: 18/18 backend tests passed (100%)
+
+### Credential Management Script (Complete - Mar 18, 2026)
+- Interactive bash script at `/app/scripts/demo_setup.sh` for EC2 demo setup
+- Auto-detects environment (EC2 vs Emergent preview)
+- Menu-driven: update WhatsApp token, ngrok URL, OpenRouter key, or all at once
+- Shows current masked config values, auto-restarts service after changes
+- Includes option to clear chat history for fresh testing
+
 ### Other Completed Work
 - Branding/UI overhaul, bug fixes, CI/CD pipeline, documentation
 
@@ -246,6 +262,10 @@ Full-stack LMS with AI-powered features for students, teachers, and admins. Incl
 ### P2
 - Implement Redis caching
 - Add automated testing
+- Verify parent phone bug fix on EC2 (user verification pending)
+
+### P3
+- Enhance Teacher Review Mode
 
 ## Test Credentials
 - **Admin**: username `admin`, password `Admin@123`
