@@ -1088,7 +1088,7 @@ async def upload_pyq(
 ):
     """PYQ upload - uses unified Gemini extraction"""
     from sqlalchemy.exc import IntegrityError
-    from app.services.storage_service import s3_client, S3_BUCKET, upload_pyq_questions_to_s3
+    from app.services.storage_service import s3_client, S3_BUCKET, upload_pyq_questions_to_s3, normalize_title, sanitize_component, sanitize_school_name
     from app.services.background_extraction import start_extraction_task, ExtractionStatus
     from app.models.database import AsyncSessionLocal
     import uuid
